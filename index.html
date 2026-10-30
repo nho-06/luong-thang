@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Lương tháng</title>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <header>
+    <a class="brand" href="./">
+      <span class="logo">₫</span>
+
+      <span>
+        Lương tháng
+        <small>SỔ CA LÀM CỦA BẠN</small>
+      </span>
+    </a>
+
+    <span id="status" class="status" role="status">
+      Đang mở sổ…
+    </span>
+  </header>
+
+  <main>
+    <section class="intro">
+      <div>
+        <span class="eyebrow">
+          LÀM BAO NHIÊU · BIẾT BẤY NHIÊU
+        </span>
+
+        <h1>
+          Mỗi ca làm,<br>
+          một khoản thu nhập.
+        </h1>
+
+        <p>
+          Theo dõi các công việc và tiền lương trong một cuốn sổ nhỏ.
+        </p>
+      </div>
+
+      <div class="month-box">
+        <label for="month">Tháng đang xem</label>
+
+        <input id="month" type="month" required>
+
+        <span id="month-label"></span>
+      </div>
+    </section>
+
+    <div id="notice" class="notice" role="alert" hidden></div>
+
+    <section class="stats">
+      <article class="stat primary">
+        <span>Tổng lương tháng</span>
+        <strong id="total">0 ₫</strong>
+        <small>Từ tất cả công việc</small>
+      </article>
+
+      <article class="stat">
+        <span>Thời gian làm</span>
+        <strong id="hours">0 giờ</strong>
+        <small>Sau khi trừ thời gian nghỉ</small>
+      </article>
+
+      <article class="stat">
+        <span>Số ca làm</span>
+        <strong id="count">0</strong>
+        <small id="job-count">
+          0 công việc có ca trong tháng
+        </small>
+      </article>
+    </section>
+
+    <div class="layout">
+      <div class="left">
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <span class="eyebrow">01 / CÔNG VIỆC</span>
+              <h2>Các nguồn thu nhập</h2>
+            </div>
+
+            <button
+              id="add-job"
+              class="btn subtle"
+              type="button"
+            >
+              + Thêm việc
+            </button>
+          </div>
+
+          <div id="jobs"></div>
+
+          <div id="jobs-empty" class="empty">
+            Thêm công việc đầu tiên và mức lương mỗi giờ.
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <span class="eyebrow">02 / CA LÀM</span>
+              <h2 id="shift-title">Ghi lại một ca làm</h2>
+            </div>
+
+            <button
+              type="button"
+              id="cancel-edit"
+              class="text-btn"
+              hidden
+            >
+              Hủy sửa
+            </button>
+          </div>
+
+          <form id="shift-form">
+            <fieldset id="shift-fields" disabled>
+              <label>
+                Công việc
+
+                <select id="job" required>
+                  <option value="">Chọn công việc</option>
+                </select>
+              </label>
+
+              <div class="pair">
+                <label>
+                  Ngày làm
+                  <input type="date" id="date" required>
+                </label>
+
+                <label>
+                  Lương / giờ (đ)
+
+                  <input
+                    type="number"
+                    id="rate"
+                    min="1"
+                    max="100000000"
+                    step="1"
+                    required
+                  >
+                </label>
+              </div>
+
+              <div class="triple">
+                <label>
+                  Giờ vào
+                  <input type="time" id="start" required>
+                </label>
+
+                <label>
+                  Giờ ra
+                  <input type="time" id="end" required>
+                </label>
+
+                <label>
+                  Nghỉ (phút)
+
+                  <input
+                    type="number"
+                    id="rest"
+                    value="0"
+                    min="0"
+                    step="1"
+                    required
+                  >
+                </label>
+              </div>
+
+              <label>
+                Ghi chú
+                <span class="optional">· không bắt buộc</span>
+
+                <input
+                  id="note"
+                  maxlength="300"
+                  placeholder="Ví dụ: ca tối, đổi ca…"
+                >
+              </label>
+
+              <div class="estimate">
+                <span id="estimate-time">
+                  Nhập giờ để xem tiền ca
+                </span>
+
+                <strong id="estimate-pay">—</strong>
+              </div>
+
+              <button
+                id="save-shift"
+                class="btn full"
+                type="submit"
+              >
+                + Lưu ca làm
+              </button>
+
+              <p class="hint">
+                Ca qua đêm: giờ ra nhỏ hơn giờ vào.
+                Đổi lương công việc không làm thay đổi lương các ca cũ.
+              </p>
+            </fieldset>
+          </form>
+        </section>
+      </div>
+
+      <section class="panel history">
+        <div class="panel-head">
+          <div>
+            <span class="eyebrow">03 / LỊCH SỬ</span>
+            <h2>Những ca đã ghi</h2>
+          </div>
+
+          <button id="export" class="text-btn" type="button">
+            Xuất CSV
+          </button>
+        </div>
+
+        <label class="filter">
+          Lọc công việc
+
+          <select id="filter">
+            <option value="">Tất cả công việc</option>
+          </select>
+        </label>
+
+        <div id="history-empty" class="empty large">
+          <span class="empty-icon">◷</span>
+
+          <h3>Tháng này chưa có ca làm</h3>
+
+          <p>
+            Ghi ca đầu tiên ở bên trái.<br>
+            Tiền lương sẽ được cộng tự động.
+          </p>
+        </div>
+
+        <div class="table-scroll">
+          <table id="table" hidden>
+            <thead>
+              <tr>
+                <th>Ngày / Công việc</th>
+                <th>Giờ làm</th>
+                <th>Tiền công</th>
+                <th>Thao tác</th>
+              </tr>
+            </thead>
+
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+
+        <footer class="history-footer">
+          <span>Tổng theo bộ lọc</span>
+          <strong id="filtered-total">0 ₫</strong>
+        </footer>
+      </section>
+    </div>
+
+    <footer class="page-footer">
+      <span>
+        Một chút rõ ràng cho mỗi tháng bận rộn.
+      </span>
+
+      <button class="text-btn" id="backup" type="button">
+        Tải bản sao dữ liệu
+      </button>
+    </footer>
+  </main>
+
+  <dialog id="job-dialog">
+    <form id="job-form">
+      <div class="panel-head">
+        <h2 id="job-title">Thêm công việc</h2>
+
+        <button
+          id="close-dialog"
+          type="button"
+          class="text-btn"
+          aria-label="Đóng"
+        >
+          ✕
+        </button>
+      </div>
+
+      <label>
+        Tên công việc
+
+        <input
+          id="job-name"
+          required
+          maxlength="60"
+          placeholder="Ví dụ: Shop phụ kiện"
+        >
+      </label>
+
+      <label>
+        Lương mỗi giờ (đ)
+
+        <input
+          id="job-rate"
+          type="number"
+          required
+          min="1"
+          max="100000000"
+          step="1"
+          placeholder="Ví dụ: 25000"
+        >
+      </label>
+
+      <p class="hint">
+        Đây là lương mặc định cho ca mới.
+        Bạn vẫn có thể đổi riêng từng ca.
+      </p>
+
+      <button class="btn full" id="save-job" type="submit">
+        Lưu công việc
+      </button>
+    </form>
+  </dialog>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
