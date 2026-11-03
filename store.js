@@ -1,7 +1,6 @@
 import { firebaseConfig } from "./config.js";
 
 const OWNER = "Tz9fec60iPXfg5gYPYycYxaFPwG3";
-const LOCAL_KEY = "luong-thang-v1";
 
 function checkPath(group, id) {
   if (
@@ -16,46 +15,25 @@ function checkPath(group, id) {
 
 export async function openStore(onData, onStatus, onAuthReady) {
   if (!firebaseConfig.apiKey || !firebaseConfig.databaseURL) {
-    let data = { jobs: {}, shifts: {} };
-    const raw = localStorage.getItem(LOCAL_KEY);
-
-    if (raw) {
-      data = JSON.parse(raw);
-      if (!data?.jobs || !data?.shifts) {
-        throw new Error("Không đọc được dữ liệu lưu trên máy.");
-      }
-    }
-
-    onData(data);
-    onStatus("local", "Lưu trên máy · chưa nối Firebase");
-
-    return {
-      id: () => crypto.randomUUID(),
-
-      async put(group, id, value) {
-        checkPath(group, id);
-
-        const next = structuredClone(data);
-        if (value === null) {
-          delete next[group][id];
-        } else {
-          next[group][id] = value;
-        }
-
-        localStorage.setItem(LOCAL_KEY, JSON.stringify(next));
-        data = next;
-        onData(data);
-      }
-    };
+    throw new Error("config.js cần có apiKey và databaseURL của dự án Firebase.");
   }
 
   onStatus("wait", "Đang kết nối Firebase…");
 
-  const [appSDK, authSDK, dbSDK] = await Promise.all([
-    import("https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js"),
-    import("https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js"),
-    import("https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js")
-  ]);
+  let appSDK;
+  let authSDK;
+  let dbSDK;
+
+  try {
+    [appSDK, authSDK, dbSDK] = await Promise.all([
+      import("https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js"),
+      import("https://www.gstatic.com/firebasejs/13.1.0/firebase-auth.js"),
+      import("https://www.gstatic.com/firebasejs/13.1.0/firebase-database.js")
+    ]);
+  } catch (error) {
+    console.error("[Lương tháng] Lỗi tải Firebase SDK", error);
+    throw new Error("Không tải được Firebase SDK từ www.gstatic.com. Xem lỗi gốc trong Console.");
+  }
 
   const { initializeApp, getApps, getApp } = appSDK;
   const {
@@ -67,7 +45,7 @@ export async function openStore(onData, onStatus, onAuthReady) {
   } = authSDK;
   const { getDatabase, ref, onValue, set, push } = dbSDK;
 
-  const app = getApps().some((app) => app.name === "[DEFAULT]")
+  const app = getApps().some(app => app.name === "[DEFAULT]")
     ? getApp()
     : initializeApp(firebaseConfig);
 
@@ -85,11 +63,13 @@ export async function openStore(onData, onStatus, onAuthReady) {
   onAuthReady(async () => {
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: "select_account" });
+
     await signInWithPopup(auth, provider);
     location.reload();
   }, auth.currentUser?.email);
 
   const user = auth.currentUser;
+
   if (!user) {
     onStatus("wait", "Đăng nhập Google để mở sổ");
     return null;
@@ -99,21 +79,13 @@ export async function openStore(onData, onStatus, onAuthReady) {
   const userPath = `users/${OWNER}`;
   const userRef = ref(db, userPath);
 
-  console.info("[Lương tháng] Kết nối Firebase", {
-    projectId: app.options.projectId,
-    uid: user.uid,
-    dataOwnerUid: OWNER,
-    path: userPath,
-    origin: location.origin
-  });
-
   let loaded = false;
   let failed = false;
   let connected = false;
 
   function showStatus() {
     if (failed) {
-      onStatus("error", "Chưa có quyền mở sổ");
+      onStatus("error", "Chưa mở được sổ");
     } else if (!connected) {
       onStatus("wait", "Đang chờ kết nối…");
     } else if (!loaded) {
@@ -123,7 +95,7 @@ export async function openStore(onData, onStatus, onAuthReady) {
     }
   }
 
-  const stopConnection = onValue(ref(db, ".info/connected"), (snapshot) => {
+  const stopConnection = onValue(ref(db, ".info/connected"), snapshot => {
     connected = snapshot.val() === true;
     showStatus();
   });
@@ -132,68 +104,58 @@ export async function openStore(onData, onStatus, onAuthReady) {
 
   try {
     await new Promise((resolve, reject) => {
-      let initial = true;
-
       stopData = onValue(
         userRef,
-        (snapshot) => {
+        snapshot => {
           if (!snapshot.exists()) {
             failed = true;
             showStatus();
-
-            if (initial) {
-              initial = false;
-              reject(new Error("Không tìm thấy sổ cũ. Kiểm tra UID gốc trong Firebase; không tạo lại dữ liệu."));
-            }
+            reject(new Error("Không tìm thấy sổ cũ. Kiểm tra databaseURL và nhánh users trong Firebase."));
             return;
           }
 
           const value = snapshot.val();
-          loaded = true;
-          failed = false;
+
           onData({
             jobs: value.jobs || {},
             shifts: value.shifts || {}
           });
-          showStatus();
 
-          if (initial) {
-            initial = false;
-            resolve();
-          }
+          loaded = true;
+          failed = false;
+          showStatus();
+          resolve();
         },
-        (error) => {
+        error => {
           failed = true;
           showStatus();
-          console.error("[Lương tháng] Lỗi đọc sổ", error.code, user.uid);
+          console.error("[Lương tháng] Lỗi đọc sổ", error);
 
-          if (initial) {
-            initial = false;
-            reject(new Error("Chưa có quyền mở sổ. Chọn đúng Gmail đã đặt tại settings/ownerEmail và kiểm tra Rules đã Publish."));
-          }
+          reject(new Error(
+            `Firebase từ chối đọc sổ (${error.code || error.message}). ` +
+            "Kiểm tra Gmail trong settings/ownerEmail và Rules đã Publish."
+          ));
         }
       );
     });
   } catch (error) {
     stopConnection();
-    if (stopData) stopData();
+    stopData?.();
     throw error;
-  }
-
-  function ensureSession() {
-    if (auth.currentUser?.uid !== user.uid) {
-      throw new Error("Phiên đã thay đổi. Hãy tải lại trang.");
-    }
-    if (failed || !loaded) {
-      throw new Error("Chưa có quyền truy cập sổ.");
-    }
   }
 
   return {
     id: () => push(userRef).key,
 
     async put(group, id, value) {
-      ensureSession();
+      if (auth.currentUser?.uid !== user.uid) {
+        throw new Error("Phiên đã thay đổi. Hãy tải lại trang.");
+      }
+
+      if (failed || !loaded) {
+        throw new Error("Chưa có quyền truy cập sổ.");
+      }
+
       checkPath(group, id);
       await set(ref(db, `${userPath}/${group}/${id}`), value);
     }
