@@ -5,7 +5,6 @@
   color: #233a34;
   background: #f5f5ef;
   font-size: 14px;
-
   --green: #176f59;
   --muted: #718079;
   --line: #e5e9e1;
@@ -38,11 +37,9 @@ header {
   max-width: 1320px;
   margin: auto;
   padding: 24px 40px;
-
   display: flex;
   align-items: center;
   justify-content: space-between;
-
   border-bottom: 1px solid var(--line);
 }
 
@@ -50,7 +47,6 @@ header {
   display: flex;
   align-items: center;
   gap: 12px;
-
   color: inherit;
   text-decoration: none;
   font-size: 19px;
@@ -60,7 +56,6 @@ header {
 .brand small {
   display: block;
   margin-top: 5px;
-
   font-size: 9px;
   letter-spacing: 2px;
   font-weight: 500;
@@ -70,11 +65,9 @@ header {
 .logo {
   display: grid;
   place-items: center;
-
   width: 42px;
   height: 42px;
   border-radius: 13px;
-
   background: var(--green);
   color: white;
   font-size: 27px;
@@ -83,7 +76,6 @@ header {
 .status {
   padding: 9px 12px;
   border-radius: 20px;
-
   font-size: 11px;
   background: #e9eee6;
   color: #516357;
@@ -138,7 +130,6 @@ p {
 .month-box {
   width: 240px;
   padding: 18px 22px;
-
   background: #fff;
   border: 1px solid var(--line);
   border-radius: 16px;
@@ -147,7 +138,6 @@ p {
 .month-box input {
   padding-left: 0;
   border: 0;
-
   font-weight: 600;
   font-size: 19px;
   background: transparent;
@@ -171,11 +161,9 @@ select {
   min-width: 0;
   margin: 8px 0 18px;
   padding: 11px 12px;
-
   border: 1px solid #dce3db;
   border-radius: 8px;
   outline: none;
-
   background: #fff;
   color: #233a34;
 }
@@ -197,10 +185,8 @@ select:focus {
   display: flex;
   flex-direction: column;
   gap: 13px;
-
   padding: 24px 26px;
   background: white;
-
   border: 1px solid var(--line);
   border-radius: 16px;
 }
@@ -247,7 +233,6 @@ select:focus {
 .panel {
   padding: 25px;
   background: white;
-
   border: 1px solid var(--line);
   border-radius: 16px;
 }
@@ -274,10 +259,8 @@ h2 {
   padding: 13px 17px;
   border: 0;
   border-radius: 9px;
-
   background: var(--green);
   color: white;
-
   font-weight: 600;
   font-size: 12px;
 }
@@ -309,7 +292,6 @@ h2 {
   display: flex;
   align-items: center;
   gap: 12px;
-
   padding: 15px 0;
   border-bottom: 1px solid var(--line);
 }
@@ -322,7 +304,6 @@ h2 {
 .job-dot {
   width: 9px;
   height: 30px;
-
   border-radius: 5px;
   background: var(--green);
   flex-shrink: 0;
@@ -409,10 +390,8 @@ fieldset {
   justify-content: space-between;
   align-items: center;
   gap: 10px;
-
   padding: 16px;
   margin: 0 0 16px;
-
   background: #f3f6ef;
   border: 1px dashed #cddcc9;
   border-radius: 9px;
@@ -440,7 +419,6 @@ fieldset {
   align-items: center;
   justify-content: flex-end;
   gap: 10px;
-
   color: var(--muted);
   font-size: 11px;
 }
@@ -458,7 +436,6 @@ fieldset {
 table {
   width: 100%;
   margin-top: 22px;
-
   border-collapse: collapse;
   text-align: left;
 }
@@ -488,7 +465,6 @@ td small {
   display: block;
   max-width: 170px;
   margin-top: 7px;
-
   font-size: 10px;
   color: var(--muted);
   overflow-wrap: anywhere;
@@ -512,10 +488,8 @@ td button {
 .history-footer {
   display: flex;
   justify-content: space-between;
-
   padding-top: 23px;
   margin-top: 10px;
-
   font-size: 12px;
   color: var(--muted);
 }
@@ -556,10 +530,8 @@ td button {
   display: flex;
   justify-content: space-between;
   gap: 15px;
-
   margin-top: 35px;
   padding: 20px 0;
-
   font-size: 10px;
   color: #8a968e;
 }
@@ -567,11 +539,9 @@ td button {
 .notice {
   padding: 14px 18px;
   margin-bottom: 20px;
-
   border-radius: 9px;
   background: #fff1df;
   color: #865422;
-
   font-size: 12px;
   line-height: 1.8;
 }
@@ -585,7 +555,6 @@ dialog {
   max-width: 440px;
   width: calc(100% - 32px);
   padding: 28px;
-
   border: 1px solid var(--line);
   border-radius: 18px;
   color: inherit;
@@ -762,5 +731,95 @@ dialog::backdrop {
 
   .filter select {
     width: 180px;
+  }
+}
+
+@media (max-width: 640px) {
+  main,
+  .layout,
+  .left,
+  .panel,
+  fieldset,
+  label {
+    min-width: 0;
+  }
+
+  .pair,
+  .triple {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .panel-head,
+  .filter,
+  .page-footer,
+  .estimate {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .filter select,
+  input:not([type="checkbox"]),
+  select {
+    max-width: 100%;
+    min-width: 0;
+    font-size: 16px;
+  }
+
+  .job-card {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .job-info {
+    flex: 1 1 75%;
+    min-width: 0;
+  }
+
+  .job-info,
+  #account-email,
+  td {
+    overflow-wrap: anywhere;
+  }
+
+  .btn,
+  .text-btn {
+    min-height: 44px;
+  }
+
+  dialog {
+    box-sizing: border-box;
+    max-width: calc(100% - 24px);
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  #table {
+    min-width: 0;
+    width: 100%;
+  }
+
+  #table thead {
+    display: none;
+  }
+
+  #table tbody,
+  #table td {
+    display: block;
+    width: auto;
+  }
+
+  #table tr {
+    display: block;
+    margin-bottom: 12px;
+    border: 1px solid #dce5de;
+    border-radius: 12px;
+    padding: 8px 12px;
+  }
+
+  #table td {
+    padding: 6px 0;
+    white-space: normal;
+    border: 0;
   }
 }
