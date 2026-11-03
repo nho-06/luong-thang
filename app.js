@@ -1,12 +1,5 @@
-import { openStore, parseJoinCode } from "./store.js";
-
-import {
-  makeShift,
-  monthRows,
-  summarize,
-  currency,
-  duration
-} from "./core.js";
+import { openStore } from "./store.js";
+import { makeShift, monthRows, summarize, currency, duration } from "./core.js";
 
 const el = id => document.getElementById(id);
 
@@ -19,19 +12,12 @@ let store = null;
 let editingShift = null;
 let editingJob = null;
 let busy = false;
-let shareBusy = false;
 
 function today() {
   const date = new Date();
-
   const year = date.getFullYear();
-  const month = String(
-    date.getMonth() + 1
-  ).padStart(2, "0");
-
-  const day = String(
-    date.getDate()
-  ).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
 
   return `${year}-${month}-${day}`;
 }
@@ -71,7 +57,6 @@ function updateOptions(select, placeholder, jobs) {
 
 function render() {
   const month = el("month").value;
-
   if (!month) return;
 
   setText(
@@ -81,23 +66,15 @@ function render() {
 
   const allRows = monthRows(data.shifts, month);
   const summary = summarize(allRows);
+  const workingJobs = new Set(allRows.map(shift => shift.jobId));
 
   setText("total", currency(summary.pay));
   setText("hours", duration(summary.minutes));
   setText("count", summary.count);
+  setText("job-count", `${workingJobs.size} công việc có ca trong tháng`);
 
-  const workingJobs = new Set(
-    allRows.map(shift => shift.jobId)
-  );
-
-  setText(
-    "job-count",
-    `${workingJobs.size} công việc có ca trong tháng`
-  );
-
-  const jobs = Object.entries(data.jobs).sort(
-    (a, b) => a[1].name.localeCompare(b[1].name, "vi")
-  );
+  const jobs = Object.entries(data.jobs)
+    .sort((a, b) => a[1].name.localeCompare(b[1].name, "vi"));
 
   updateOptions(el("job"), "Chọn công việc", jobs);
   updateOptions(el("filter"), "Tất cả công việc", jobs);
@@ -105,14 +82,12 @@ function render() {
   el("jobs-empty").hidden = jobs.length > 0;
 
   el("jobs").innerHTML = jobs.map(([id, job]) => {
-    const total = summarize(
-      allRows.filter(shift => shift.jobId === id)
-    );
+    const jobRows = allRows.filter(shift => shift.jobId === id);
+    const total = summarize(jobRows);
 
     return `
       <div class="job-card">
         <span class="job-dot"></span>
-
         <div class="job-info">
           <strong>${escapeHTML(job.name)}</strong>
           <small>
@@ -120,60 +95,31 @@ function render() {
             Đêm ${currency(job.nightRate ?? job.rate)}/giờ
           </small>
         </div>
-
         <div class="job-money">
           ${currency(total.pay)}
-          <small>
-            ${total.count} ca · ${duration(total.minutes)}
-          </small>
+          <small>${total.count} ca · ${duration(total.minutes)}</small>
         </div>
-
         <div class="job-actions">
-          <button
-            class="text-btn"
-            data-edit-job="${escapeHTML(id)}"
-          >Sửa</button>
-
-          <button
-            class="text-btn"
-            data-delete-job="${escapeHTML(id)}"
-          >Xóa</button>
+          <button class="text-btn" data-edit-job="${escapeHTML(id)}">Sửa</button>
+          <button class="text-btn" data-delete-job="${escapeHTML(id)}">Xóa</button>
         </div>
       </div>
     `;
   }).join("");
 
-  const filteredRows = monthRows(
-    data.shifts,
-    month,
-    el("filter").value
-  );
+  const filteredRows = monthRows(data.shifts, month, el("filter").value);
 
   el("table").hidden = filteredRows.length === 0;
   el("history-empty").hidden = filteredRows.length > 0;
 
   el("rows").innerHTML = filteredRows.map(shift => {
-    const formattedDate = shift.date
-      .split("-")
-      .reverse()
-      .join("/");
+    const formattedDate = shift.date.split("-").reverse().join("/");
+    const restText = shift.rest ? ` · nghỉ ${shift.rest}p` : "";
+    const overnight = shift.end < shift.start ? " · qua đêm" : "";
 
-    const restText = shift.rest
-      ? ` · nghỉ ${shift.rest}p`
-      : "";
-
-    const overnight = shift.end < shift.start
-      ? " · qua đêm"
-      : "";
-
-    const payDetail = shift.payMode === "split"
-      ? `
-        Thường ${duration(shift.dayMinutes)}
-        × ${currency(shift.rate)}/giờ
-        <br>
-        Đêm ${duration(shift.nightMinutes)}
-        × ${currency(shift.nightRate)}/giờ
-      `
+    const rateDetails = shift.payMode === "split"
+      ? `Thường ${duration(shift.dayMinutes)} × ${currency(shift.rate)}/giờ<br>
+         Đêm ${duration(shift.nightMinutes)} × ${currency(shift.nightRate)}/giờ`
       : `${currency(shift.rate)}/giờ · ca cũ một mức`;
 
     return `
@@ -181,46 +127,25 @@ function render() {
         <td>
           <strong>${escapeHTML(formattedDate)}</strong>
           <small>${escapeHTML(shift.jobName)}</small>
-          ${
-            shift.note
-              ? `<small>${escapeHTML(shift.note)}</small>`
-              : ""
-          }
+          ${shift.note ? `<small>${escapeHTML(shift.note)}</small>` : ""}
         </td>
-
         <td>
-          ${escapeHTML(shift.start)}–${escapeHTML(shift.end)}
-          <small>
-            ${duration(shift.minutes)}
-            ${restText}
-            ${overnight}
-          </small>
+          ${escapeHTML(shift.start)} – ${escapeHTML(shift.end)}
+          <small>${duration(shift.minutes)}${restText}${overnight}</small>
         </td>
-
         <td>
           ${currency(shift.pay)}
-          <small>${payDetail}</small>
+          <small>${rateDetails}</small>
         </td>
-
         <td>
-          <button
-            class="text-btn"
-            data-edit-shift="${escapeHTML(shift.id)}"
-          >Sửa</button>
-
-          <button
-            class="text-btn"
-            data-delete-shift="${escapeHTML(shift.id)}"
-          >Xóa</button>
+          <button class="text-btn" data-edit-shift="${escapeHTML(shift.id)}">Sửa</button>
+          <button class="text-btn" data-delete-shift="${escapeHTML(shift.id)}">Xóa</button>
         </td>
       </tr>
     `;
   }).join("");
 
-  setText(
-    "filtered-total",
-    currency(summarize(filteredRows).pay)
-  );
+  setText("filtered-total", currency(summarize(filteredRows).pay));
 }
 
 function getShiftFromForm() {
@@ -230,18 +155,14 @@ function getShiftFromForm() {
   return makeShift({
     jobId,
     jobName: job?.name,
-
     date: el("date").value,
     start: el("start").value,
     end: el("end").value,
-
     rest: el("rest").value,
     rate: el("rate").value,
-
     payMode: el("use-night").checked ? "split" : "legacy",
     nightRate: el("night-rate").value,
     nightRest: el("night-rest").value,
-
     note: el("note").value
   });
 }
@@ -260,14 +181,7 @@ function updateEstimate() {
     setText("estimate-pay", currency(shift.pay));
   } catch (error) {
     const hasTimes = el("start").value && el("end").value;
-
-    setText(
-      "estimate-time",
-      hasTimes
-        ? error.message
-        : "Nhập giờ để xem tiền ca"
-    );
-
+    setText("estimate-time", hasTimes ? error.message : "Nhập giờ để xem tiền ca");
     setText("estimate-pay", "—");
   }
 }
@@ -281,9 +195,7 @@ function updateNightFields() {
 
   setText(
     "rest-label",
-    enabled
-      ? "Nghỉ khung thường (phút)"
-      : "Nghỉ cả ca (phút)"
+    enabled ? "Nghỉ khung thường (phút)" : "Nghỉ cả ca (phút)"
   );
 }
 
@@ -293,14 +205,11 @@ function resetShiftForm() {
   el("shift-form").reset();
   el("date").value = today();
   el("legacy-hint").hidden = true;
-
-  updateNightFields();
-
-  setText("shift-title", "Ghi lại một ca làm");
-  setText("save-shift", "+ Lưu ca làm");
-
   el("cancel-edit").hidden = true;
 
+  updateNightFields();
+  setText("shift-title", "Ghi lại một ca làm");
+  setText("save-shift", "+ Lưu ca làm");
   updateEstimate();
 }
 
@@ -308,15 +217,12 @@ async function mutate(action, message) {
   if (busy || !store) return false;
 
   busy = true;
-
   el("shift-fields").disabled = true;
   el("save-job").disabled = true;
-
   setText("save-shift", "Đang lưu…");
 
   try {
     await action();
-
     notice(message, true);
     return true;
   } catch (error) {
@@ -324,45 +230,35 @@ async function mutate(action, message) {
     return false;
   } finally {
     busy = false;
-
     el("shift-fields").disabled = false;
     el("save-job").disabled = false;
-
-    setText(
-      "save-shift",
-      editingShift ? "Lưu thay đổi" : "+ Lưu ca làm"
-    );
+    setText("save-shift", editingShift ? "Lưu thay đổi" : "+ Lưu ca làm");
   }
 }
+
+el("month").value = today().slice(0, 7);
+el("date").value = today();
+updateNightFields();
 
 el("use-night").addEventListener("change", () => {
   updateNightFields();
   updateEstimate();
 });
 
-updateNightFields();
-
-el("month").value = today().slice(0, 7);
-el("date").value = today();
-
 el("month").addEventListener("change", () => {
   if (!el("month").value) {
     el("month").value = today().slice(0, 7);
   }
-
   render();
 });
 
 el("filter").addEventListener("change", render);
 
 el("job").addEventListener("change", () => {
-  const job = data.jobs[el("job").value];
+  const selectedJob = data.jobs[el("job").value];
 
-  el("rate").value = job?.rate || "";
-
-  el("night-rate").value =
-    job?.nightRate ?? job?.rate ?? "";
-
+  el("rate").value = selectedJob?.rate || "";
+  el("night-rate").value = selectedJob?.nightRate ?? selectedJob?.rate ?? "";
   updateEstimate();
 });
 
@@ -374,7 +270,6 @@ el("cancel-edit").addEventListener("click", () => {
 
 el("shift-form").addEventListener("submit", async event => {
   event.preventDefault();
-
   if (busy || !store) return;
 
   try {
@@ -389,7 +284,6 @@ el("shift-form").addEventListener("submit", async event => {
     if (saved) {
       el("month").value = shift.date.slice(0, 7);
       el("filter").value = "";
-
       resetShiftForm();
       render();
     }
@@ -402,27 +296,17 @@ function showJobDialog(id = null) {
   if (busy || !store) return;
 
   editingJob = id;
-
   const job = data.jobs[id];
 
-  setText(
-    "job-title",
-    job ? "Sửa công việc" : "Thêm công việc"
-  );
+  setText("job-title", job ? "Sửa công việc" : "Thêm công việc");
 
   el("job-name").value = job?.name || "";
   el("job-rate").value = job?.rate || "";
-
-  el("job-night-rate").value =
-    job?.nightRate ?? job?.rate ?? "";
-
+  el("job-night-rate").value = job?.nightRate ?? job?.rate ?? "";
   el("job-dialog").showModal();
 }
 
-el("add-job").addEventListener(
-  "click",
-  () => showJobDialog()
-);
+el("add-job").addEventListener("click", () => showJobDialog());
 
 el("close-dialog").addEventListener("click", () => {
   if (!busy) el("job-dialog").close();
@@ -434,7 +318,6 @@ el("job-dialog").addEventListener("cancel", event => {
 
 el("job-form").addEventListener("submit", async event => {
   event.preventDefault();
-
   if (!store || busy) return;
 
   const name = el("job-name").value.trim();
@@ -454,15 +337,10 @@ el("job-form").addEventListener("submit", async event => {
     return;
   }
 
-  const duplicate = Object.entries(data.jobs).some(
-    ([id, job]) => {
-      return (
-        id !== editingJob &&
-        job.name.toLocaleLowerCase("vi") ===
-          name.toLocaleLowerCase("vi")
-      );
-    }
-  );
+  const duplicate = Object.entries(data.jobs).some(([id, job]) => {
+    return id !== editingJob &&
+      job.name.toLocaleLowerCase("vi") === name.toLocaleLowerCase("vi");
+  });
 
   if (duplicate) {
     notice("Tên công việc này đã có.");
@@ -483,7 +361,6 @@ el("job-form").addEventListener("submit", async event => {
       el("job").value = id;
       el("rate").value = rate;
       el("night-rate").value = nightRate;
-
       updateEstimate();
     }
   }
@@ -491,7 +368,6 @@ el("job-form").addEventListener("submit", async event => {
 
 document.addEventListener("click", async event => {
   const button = event.target.closest("button");
-
   if (!button || busy || !store) return;
 
   if (button.dataset.editJob) {
@@ -501,17 +377,10 @@ document.addEventListener("click", async event => {
 
   if (button.dataset.deleteJob) {
     const id = button.dataset.deleteJob;
-
-    const hasShifts = Object.values(data.shifts).some(
-      shift => shift.jobId === id
-    );
+    const hasShifts = Object.values(data.shifts).some(shift => shift.jobId === id);
 
     if (hasShifts) {
-      notice(
-        "Công việc này có lịch sử ca làm. " +
-        "Chỉ xóa được sau khi xóa các ca của công việc."
-      );
-
+      notice("Công việc này có lịch sử ca làm. Chỉ xóa được sau khi xóa các ca của công việc.");
       return;
     }
 
@@ -521,60 +390,39 @@ document.addEventListener("click", async event => {
         "Đã xóa công việc."
       );
     }
-
     return;
   }
 
   if (button.dataset.editShift) {
     const id = button.dataset.editShift;
     const shift = data.shifts[id];
-
     if (!shift) return;
 
     editingShift = id;
-
     el("job").value = shift.jobId;
 
-    for (const field of [
-      "date", "start", "end", "rest", "rate", "note"
-    ]) {
+    for (const field of ["date", "start", "end", "rate", "note"]) {
       el(field).value = shift[field] ?? "";
     }
 
     el("use-night").checked = shift.payMode === "split";
-
-    el("night-rate").value =
-      shift.nightRate ?? shift.rate;
-
-    el("rest").value = shift.payMode === "split"
-      ? shift.dayRest
-      : shift.rest;
-
+    el("night-rate").value = shift.nightRate ?? shift.rate;
+    el("rest").value = shift.payMode === "split" ? shift.dayRest : shift.rest;
     el("night-rest").value = shift.nightRest ?? 0;
-
-    el("legacy-hint").hidden =
-      shift.payMode === "split";
-
-    updateNightFields();
-
-    setText("shift-title", "Sửa ca làm");
-    setText("save-shift", "Lưu thay đổi");
-
+    el("legacy-hint").hidden = shift.payMode === "split";
     el("cancel-edit").hidden = false;
 
+    updateNightFields();
+    setText("shift-title", "Sửa ca làm");
+    setText("save-shift", "Lưu thay đổi");
     updateEstimate();
 
-    el("shift-form").scrollIntoView({
-      behavior: "smooth",
-      block: "center"
-    });
-
+    el("shift-form").scrollIntoView({ behavior: "smooth", block: "center" });
     return;
   }
 
   if (button.dataset.deleteShift) {
     const id = button.dataset.deleteShift;
-
     if (!confirm("Xóa ca làm này?")) return;
 
     const deleted = await mutate(
@@ -582,17 +430,15 @@ document.addEventListener("click", async event => {
       "Đã xóa ca làm."
     );
 
-    if (deleted && editingShift === id) {
-      resetShiftForm();
-    }
+    if (deleted && editingShift === id) resetShiftForm();
   }
 });
 
 function download(content, name, type) {
   const blob = new Blob([content], { type });
   const url = URL.createObjectURL(blob);
-
   const link = document.createElement("a");
+
   link.href = url;
   link.download = name;
   link.click();
@@ -603,16 +449,14 @@ function download(content, name, type) {
 el("backup").addEventListener("click", () => {
   if (!store) return;
 
+  const backup = {
+    version: 2,
+    exportedAt: new Date().toISOString(),
+    ...data
+  };
+
   download(
-    JSON.stringify(
-      {
-        version: 2,
-        exportedAt: new Date().toISOString(),
-        ...data
-      },
-      null,
-      2
-    ),
+    JSON.stringify(backup, null, 2),
     `sao-luu-luong-${today()}.json`,
     "application/json"
   );
@@ -621,11 +465,7 @@ el("backup").addEventListener("click", () => {
 el("export").addEventListener("click", () => {
   if (!store) return;
 
-  const rows = monthRows(
-    data.shifts,
-    el("month").value,
-    el("filter").value
-  );
+  const rows = monthRows(data.shifts, el("month").value, el("filter").value);
 
   if (!rows.length) {
     notice("Chưa có ca làm để xuất.");
@@ -635,6 +475,7 @@ el("export").addEventListener("click", () => {
   function csvCell(value) {
     let text = String(value ?? "");
 
+    // Tránh nội dung ghi chú bị Excel hiểu là công thức.
     if (/^[=+@\-\t\r]/.test(text)) {
       text = "'" + text;
     }
@@ -644,13 +485,11 @@ el("export").addEventListener("click", () => {
 
   const matrix = [
     [
-      "Ngày", "Công việc", "Giờ vào", "Giờ ra",
-      "Nghỉ (phút)", "Thực làm (phút)",
-      "Lương giờ", "Tiền công", "Ghi chú",
-      "Lương đêm", "Phút thường", "Phút đêm",
-      "Nghỉ thường", "Nghỉ đêm", "Cách tính"
+      "Ngày", "Công việc", "Giờ vào", "Giờ ra", "Nghỉ (phút)",
+      "Thực làm (phút)", "Lương giờ", "Tiền công", "Ghi chú",
+      "Lương đêm", "Phút thường", "Phút đêm", "Nghỉ thường", "Nghỉ đêm",
+      "Cách tính"
     ],
-
     ...rows.map(shift => [
       shift.date,
       shift.jobName,
@@ -670,15 +509,9 @@ el("export").addEventListener("click", () => {
     ])
   ];
 
-  const csv = "\uFEFF" + matrix
-    .map(row => row.map(csvCell).join(","))
-    .join("\r\n");
+  const csv = "\uFEFF" + matrix.map(row => row.map(csvCell).join(",")).join("\r\n");
 
-  download(
-    csv,
-    `luong-${el("month").value}.csv`,
-    "text/csv;charset=utf-8"
-  );
+  download(csv, `luong-${el("month").value}.csv`, "text/csv;charset=utf-8");
 });
 
 openStore(
@@ -686,20 +519,33 @@ openStore(
     data = value;
     render();
   },
-
   (kind, message) => {
     el("status").dataset.kind = kind;
     setText("status", message);
+  },
+  (signIn, email) => {
+    const button = el("google-sign-in");
+    button.disabled = false;
+
+    if (email) setText("account-email", email);
+
+    button.addEventListener("click", async () => {
+      button.disabled = true;
+      try {
+        await signIn();
+      } catch (error) {
+        notice("Đăng nhập Google chưa thành công. " + error.message);
+        button.disabled = false;
+      }
+    });
   }
 )
   .then(value => {
-    store = value;
+    if (!value) return;
 
+    store = value;
     el("shift-fields").disabled = false;
     el("add-job").disabled = false;
-
-    el("share-create").disabled = !store.canShare;
-    el("share-revoke").disabled = !store.canShare;
   })
   .catch(error => {
     setText("status", "Chưa kết nối được");
@@ -707,107 +553,10 @@ openStore(
 
     notice(
       "Chưa mở được dữ liệu. " +
-      "Kiểm tra cấu hình Firebase, bật Anonymous " +
+      "Kiểm tra cấu hình Firebase, bật Google " +
       "và áp dụng Database Rules. " +
       error.message
     );
   });
 
 render();
-
-el("share-create").addEventListener("click", async () => {
-  if (!store || shareBusy || busy) return;
-
-  shareBusy = true;
-  el("share-create").disabled = true;
-
-  try {
-    el("share-link").value =
-      await store.createShareLink();
-
-    el("share-result").hidden = false;
-    el("share-copy").disabled = false;
-
-    setText(
-      "sync-message",
-      "Mở link này trên điện thoại để xem và sửa cùng sổ. " +
-      "Chỉ gửi cho thiết bị của bạn."
-    );
-  } catch (error) {
-    notice(error.message);
-  } finally {
-    shareBusy = false;
-    el("share-create").disabled = !store?.canShare;
-  }
-});
-
-el("share-copy").addEventListener("click", async () => {
-  try {
-    await navigator.clipboard.writeText(
-      el("share-link").value
-    );
-
-    setText(
-      "sync-message",
-      "Đã sao chép link riêng."
-    );
-  } catch {
-    el("share-link").focus();
-    el("share-link").select();
-
-    setText(
-      "sync-message",
-      "Chọn và sao chép link trong ô phía trên."
-    );
-  }
-});
-
-el("share-revoke").addEventListener("click", async () => {
-  if (!store || shareBusy || busy) return;
-
-  if (
-    !confirm(
-      "Thu hồi link và ngắt quyền các thiết bị đã mở " +
-      "bằng link này? Máy gốc vẫn dùng bình thường."
-    )
-  ) {
-    return;
-  }
-
-  shareBusy = true;
-  el("share-revoke").disabled = true;
-
-  try {
-    await store.revokeShareLink();
-
-    el("share-link").value = "";
-    el("share-result").hidden = true;
-    el("share-copy").disabled = true;
-
-    setText(
-      "sync-message",
-      "Đã thu hồi. Tạo link mới nếu muốn liên kết lại điện thoại."
-    );
-  } catch (error) {
-    notice(error.message);
-  } finally {
-    shareBusy = false;
-    el("share-revoke").disabled = !store?.canShare;
-  }
-});
-
-el("join-open").addEventListener("click", () => {
-  if (busy || shareBusy) return;
-
-  const code = parseJoinCode(
-    el("join-link").value
-  );
-
-  if (!code) {
-    notice("Link hoặc mã sổ không hợp lệ.");
-    return;
-  }
-
-  location.hash = "join=" + code;
-  location.reload();
-});

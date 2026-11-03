@@ -21,19 +21,13 @@ export function minutesBetween(start, end, rest = 0) {
   }
 
   if (endMinutes < startMinutes) {
-    endMinutes += 1440;
+    endMinutes += 24 * 60;
   }
 
   const shiftMinutes = endMinutes - startMinutes;
 
-  if (
-    !Number.isInteger(rest) ||
-    rest < 0 ||
-    rest >= shiftMinutes
-  ) {
-    throw new Error(
-      "Số phút nghỉ phải nhỏ hơn thời gian ca làm."
-    );
+  if (!Number.isInteger(rest) || rest < 0 || rest >= shiftMinutes) {
+    throw new Error("Số phút nghỉ phải nhỏ hơn thời gian ca làm.");
   }
 
   return shiftMinutes - rest;
@@ -52,21 +46,19 @@ export function validDate(value) {
   );
 }
 
-// Đêm: 22:00–trước 10:00.
-// Thường: 10:00–trước 22:00.
+// Khung đêm từ 22:00 đến trước 10:00 hôm sau.
 export function splitMinutes(start, end) {
-  const total = minutesBetween(start, end, 0);
-
+  const total = minutesBetween(start, end);
   const [hours, minutes] = start.split(":").map(Number);
-  const first = hours * 60 + minutes;
+  const firstMinute = hours * 60 + minutes;
 
   let day = 0;
   let night = 0;
 
-  for (let i = 0; i < total; i++) {
-    const clock = (first + i) % 1440;
+  for (let offset = 0; offset < total; offset++) {
+    const clock = (firstMinute + offset) % 1440;
 
-    if (clock >= 1320 || clock < 600) {
+    if (clock >= 22 * 60 || clock < 10 * 60) {
       night++;
     } else {
       day++;
@@ -88,18 +80,11 @@ export function makeShift(value) {
     throw new Error("Ngày làm chưa hợp lệ.");
   }
 
-  const validRate = number => {
-    return (
-      Number.isSafeInteger(number) &&
-      number > 0 &&
-      number <= 100000000
-    );
-  };
+  const validRate = amount =>
+    Number.isSafeInteger(amount) && amount > 0 && amount <= 100000000;
 
   if (!validRate(rate)) {
-    throw new Error(
-      "Lương giờ phải là số nguyên từ 1 đến 100.000.000đ."
-    );
+    throw new Error("Lương giờ phải là số nguyên từ 1 đến 100.000.000đ.");
   }
 
   const base = {
@@ -111,13 +96,8 @@ export function makeShift(value) {
     note: String(value.note || "").trim().slice(0, 300)
   };
 
-  // Ca cũ: tiếp tục tính một mức nếu chưa chọn tính lại.
   if (value.payMode !== "split") {
-    const minutes = minutesBetween(
-      value.start,
-      value.end,
-      rest
-    );
+    const minutes = minutesBetween(value.start, value.end, rest);
 
     return {
       ...base,
@@ -137,24 +117,12 @@ export function makeShift(value) {
 
   const raw = splitMinutes(value.start, value.end);
 
-  if (
-    !Number.isInteger(rest) ||
-    rest < 0 ||
-    rest > raw.day
-  ) {
-    throw new Error(
-      `Nghỉ khung thường phải từ 0 đến ${raw.day} phút.`
-    );
+  if (!Number.isInteger(rest) || rest < 0 || rest > raw.day) {
+    throw new Error(`Nghỉ khung thường phải từ 0 đến ${raw.day} phút.`);
   }
 
-  if (
-    !Number.isInteger(nightRest) ||
-    nightRest < 0 ||
-    nightRest > raw.night
-  ) {
-    throw new Error(
-      `Nghỉ khung đêm phải từ 0 đến ${raw.night} phút.`
-    );
+  if (!Number.isInteger(nightRest) || nightRest < 0 || nightRest > raw.night) {
+    throw new Error(`Nghỉ khung đêm phải từ 0 đến ${raw.night} phút.`);
   }
 
   const dayMinutes = raw.day - rest;
@@ -162,50 +130,35 @@ export function makeShift(value) {
   const minutes = dayMinutes + nightMinutes;
 
   if (minutes <= 0) {
-    throw new Error(
-      "Ca phải còn thời gian thực làm sau khi trừ nghỉ."
-    );
+    throw new Error("Ca phải còn thời gian thực làm sau khi trừ nghỉ.");
   }
 
   return {
     ...base,
     payMode: "split",
-
     rate,
     nightRate,
-
     dayRest: rest,
     nightRest,
     rest: rest + nightRest,
-
     dayMinutes,
     nightMinutes,
     minutes,
-
-    pay: Math.round(
-      (
-        dayMinutes * rate +
-        nightMinutes * nightRate
-      ) / 60
-    )
+    pay: Math.round((dayMinutes * rate + nightMinutes * nightRate) / 60)
   };
 }
 
 export function monthRows(shifts, month, jobId = "") {
   return Object.entries(shifts || {})
     .map(([id, shift]) => ({ ...shift, id }))
-    .filter(shift => {
-      return (
-        shift.date.startsWith(month) &&
-        (!jobId || shift.jobId === jobId)
-      );
-    })
-    .sort((a, b) => {
-      return (
-        b.date.localeCompare(a.date) ||
-        b.start.localeCompare(a.start)
-      );
-    });
+    .filter(shift => (
+      shift.date.startsWith(month) &&
+      (!jobId || shift.jobId === jobId)
+    ))
+    .sort((a, b) => (
+      b.date.localeCompare(a.date) ||
+      b.start.localeCompare(a.start)
+    ));
 }
 
 export function summarize(rows) {

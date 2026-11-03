@@ -17,23 +17,15 @@
       </span>
     </a>
 
-    <span id="status" class="status" role="status">
-      Đang mở sổ…
-    </span>
+    <span id="status" class="status" role="status">Đang mở sổ…</span>
   </header>
 
   <main>
     <section class="intro">
       <div>
-        <span class="eyebrow">
-          LÀM BAO NHIÊU · BIẾT BẤY NHIÊU
-        </span>
-
+        <span class="eyebrow">LÀM BAO NHIÊU · BIẾT BẤY NHIÊU</span>
         <h1>Mỗi ca làm,<br>một khoản thu nhập.</h1>
-
-        <p>
-          Theo dõi các công việc và tiền lương trong một cuốn sổ nhỏ.
-        </p>
+        <p>Theo dõi các công việc và tiền lương trong một cuốn sổ nhỏ.</p>
       </div>
 
       <div class="month-box">
@@ -41,6 +33,15 @@
         <input id="month" type="month" required>
         <span id="month-label"></span>
       </div>
+    </section>
+
+    <section class="panel" style="margin-bottom:16px">
+      <button id="google-sign-in" class="btn" type="button" disabled>
+        Đăng nhập Google
+      </button>
+      <p id="account-email" class="hint">
+        Dùng Gmail đã được cấp quyền để mở sổ trên máy tính và điện thoại.
+      </p>
     </section>
 
     <div id="notice" class="notice" role="alert" hidden></div>
@@ -80,7 +81,6 @@
           </div>
 
           <div id="jobs"></div>
-
           <div id="jobs-empty" class="empty">
             Thêm công việc đầu tiên và mức lương mỗi giờ.
           </div>
@@ -93,12 +93,7 @@
               <h2 id="shift-title">Ghi lại một ca làm</h2>
             </div>
 
-            <button
-              id="cancel-edit"
-              type="button"
-              class="text-btn"
-              hidden
-            >
+            <button type="button" id="cancel-edit" class="text-btn" hidden>
               Hủy sửa
             </button>
           </div>
@@ -144,14 +139,7 @@
 
                 <label>
                   <span id="rest-label">Nghỉ khung thường (phút)</span>
-                  <input
-                    type="number"
-                    id="rest"
-                    value="0"
-                    min="0"
-                    step="1"
-                    required
-                  >
+                  <input type="number" id="rest" value="0" min="0" step="1" required>
                 </label>
               </div>
 
@@ -182,31 +170,19 @@
                 </label>
               </div>
 
-              <label
-                style="display:flex;align-items:center;gap:8px;margin-bottom:12px"
-              >
-                <input
-                  id="use-night"
-                  type="checkbox"
-                  checked
-                  style="width:auto;margin:0"
-                >
+              <label style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+                <input id="use-night" type="checkbox" checked style="width:auto;margin:0">
                 Tính hai mức lương: thường / đêm
               </label>
 
               <p id="legacy-hint" class="hint" hidden>
-                Ca cũ đang giữ cách tính một mức.
-                Chỉ bật hai mức nếu muốn tính lại ca này.
+                Ca cũ đang giữ cách tính một mức. Chỉ bật hai mức nếu muốn tính lại ca này.
               </p>
 
               <label>
                 Ghi chú
                 <span class="optional">· không bắt buộc</span>
-                <input
-                  id="note"
-                  maxlength="300"
-                  placeholder="Ví dụ: ca tối, đổi ca…"
-                >
+                <input id="note" maxlength="300" placeholder="Ví dụ: ca tối, đổi ca…">
               </label>
 
               <div class="estimate">
@@ -219,11 +195,9 @@
               </button>
 
               <p class="hint">
-                Thường: 10:00–trước 22:00.
-                Đêm: 22:00–trước 10:00 hôm sau.
-                Nhập phút nghỉ đúng khung.
-                Ca qua đêm tính vào ngày bắt đầu.
-                Ca cũ không tự đổi tiền.
+                Lương thường: 10:00–trước 22:00. Lương đêm: 22:00–trước 10:00 hôm sau.
+                Nhập phút nghỉ đúng khung. Ca qua đêm được tính vào ngày bắt đầu.
+                Các ca cũ không tự đổi tiền.
               </p>
             </fieldset>
           </form>
@@ -237,9 +211,7 @@
             <h2>Những ca đã ghi</h2>
           </div>
 
-          <button id="export" class="text-btn" type="button">
-            Xuất CSV
-          </button>
+          <button id="export" class="text-btn" type="button">Xuất CSV</button>
         </div>
 
         <label class="filter">
@@ -252,10 +224,7 @@
         <div id="history-empty" class="empty large">
           <span class="empty-icon">◷</span>
           <h3>Tháng này chưa có ca làm</h3>
-          <p>
-            Ghi ca đầu tiên ở bên trái.<br>
-            Tiền lương sẽ được cộng tự động.
-          </p>
+          <p>Ghi ca đầu tiên ở bên trái.<br>Tiền lương sẽ được cộng tự động.</p>
         </div>
 
         <div class="table-scroll">
@@ -279,74 +248,8 @@
       </section>
     </div>
 
-    <section class="panel" style="margin-top:24px">
-      <div class="panel-head">
-        <div>
-          <span class="eyebrow">04 / DÙNG TRÊN ĐIỆN THOẠI</span>
-          <h2>Một sổ, nhiều thiết bị</h2>
-        </div>
-      </div>
-
-      <p class="hint">
-        Máy gốc tạo link riêng để điện thoại mở cùng sổ Firebase.
-        Người có link được xem và sửa sổ.
-        Giữ link riêng, không đăng lên GitHub.
-      </p>
-
-      <div style="display:flex;gap:12px;flex-wrap:wrap;margin:16px 0">
-        <button
-          id="share-create"
-          class="btn"
-          type="button"
-          disabled
-        >
-          Tạo / lấy link riêng
-        </button>
-
-        <button
-          id="share-copy"
-          class="btn subtle"
-          type="button"
-          disabled
-        >
-          Sao chép link
-        </button>
-
-        <button
-          id="share-revoke"
-          class="text-btn"
-          type="button"
-          disabled
-        >
-          Thu hồi link
-        </button>
-      </div>
-
-      <label id="share-result" hidden>
-        Link dùng trên điện thoại
-        <input id="share-link" readonly type="text">
-      </label>
-
-      <label>
-        Thiết bị mới: dán link riêng hoặc mã sổ
-        <input
-          id="join-link"
-          type="text"
-          autocomplete="off"
-          placeholder="Dán link do máy gốc tạo"
-        >
-      </label>
-
-      <button id="join-open" class="btn subtle" type="button">
-        Mở sổ từ link
-      </button>
-
-      <p id="sync-message" class="hint" role="status"></p>
-    </section>
-
     <footer class="page-footer">
       <span>Một chút rõ ràng cho mỗi tháng bận rộn.</span>
-
       <button class="text-btn" id="backup" type="button">
         Tải bản sao dữ liệu
       </button>
@@ -357,25 +260,14 @@
     <form id="job-form">
       <div class="panel-head">
         <h2 id="job-title">Thêm công việc</h2>
-
-        <button
-          id="close-dialog"
-          type="button"
-          class="text-btn"
-          aria-label="Đóng"
-        >
+        <button id="close-dialog" type="button" class="text-btn" aria-label="Đóng">
           ✕
         </button>
       </div>
 
       <label>
         Tên công việc
-        <input
-          id="job-name"
-          required
-          maxlength="60"
-          placeholder="Ví dụ: Shop phụ kiện"
-        >
+        <input id="job-name" required maxlength="60" placeholder="Ví dụ: Shop phụ kiện">
       </label>
 
       <label>
@@ -387,7 +279,7 @@
           min="1"
           max="100000000"
           step="1"
-          placeholder="Ví dụ: 20000"
+          placeholder="Ví dụ: 25000"
         >
       </label>
 
@@ -405,15 +297,12 @@
       </label>
 
       <p class="hint">
-        Thường: 10:00–trước 22:00.
-        Đêm: 22:00–trước 10:00 hôm sau.
-        Mức lương này dùng cho ca mới;
-        không tự thay đổi các ca đã lưu.
+        Thường: 10:00–trước 22:00. Đêm: 22:00–trước 10:00 hôm sau.
+        Đây là lương mặc định cho ca mới.
+        Bạn vẫn có thể đổi riêng từng ca.
       </p>
 
-      <button class="btn full" id="save-job" type="submit">
-        Lưu công việc
-      </button>
+      <button class="btn full" id="save-job" type="submit">Lưu công việc</button>
     </form>
   </dialog>
 
