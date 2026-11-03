@@ -20,9 +20,8 @@ export function minutesBetween(start, end, rest = 0) {
     throw new Error("Giờ vào và giờ ra phải khác nhau.");
   }
 
-  // Ca qua đêm.
   if (endMinutes < startMinutes) {
-    endMinutes += 24 * 60;
+    endMinutes += 1440;
   }
 
   const shiftMinutes = endMinutes - startMinutes;
@@ -53,6 +52,30 @@ export function validDate(value) {
   );
 }
 
+// Đêm: 22:00–trước 10:00.
+// Thường: 10:00–trước 22:00.
+export function splitMinutes(start, end) {
+  const total = minutesBetween(start, end, 0);
+
+  const [hours, minutes] = start.split(":").map(Number);
+  const first = hours * 60 + minutes;
+
+  let day = 0;
+  let night = 0;
+
+  for (let i = 0; i < total; i++) {
+    const clock = (first + i) % 1440;
+
+    if (clock >= 1320 || clock < 600) {
+      night++;
+    } else {
+      day++;
+    }
+  }
+
+  return { day, night };
+}
+
 export function makeShift(value) {
   const rate = Number(value.rate);
   const rest = Number(value.rest);
@@ -65,46 +88,112 @@ export function makeShift(value) {
     throw new Error("Ngày làm chưa hợp lệ.");
   }
 
-  if (
-    !Number.isSafeInteger(rate) ||
-    rate <= 0 ||
-    rate > 100000000
-  ) {
+  const validRate = number => {
+    return (
+      Number.isSafeInteger(number) &&
+      number > 0 &&
+      number <= 100000000
+    );
+  };
+
+  if (!validRate(rate)) {
     throw new Error(
-      "Lương giờ cần là số nguyên từ 1 đến 100.000.000đ."
+      "Lương giờ phải là số nguyên từ 1 đến 100.000.000đ."
     );
   }
 
-  const minutes = minutesBetween(
-    value.start,
-    value.end,
-    rest
-  );
-
-  return {
+  const base = {
     jobId: value.jobId,
     jobName: value.jobName.trim(),
-
     date: value.date,
     start: value.start,
     end: value.end,
+    note: String(value.note || "").trim().slice(0, 300)
+  };
 
-    rest,
+  // Ca cũ: tiếp tục tính một mức nếu chưa chọn tính lại.
+  if (value.payMode !== "split") {
+    const minutes = minutesBetween(
+      value.start,
+      value.end,
+      rest
+    );
+
+    return {
+      ...base,
+      rest,
+      rate,
+      minutes,
+      pay: Math.round(minutes * rate / 60)
+    };
+  }
+
+  const nightRate = Number(value.nightRate);
+  const nightRest = Number(value.nightRest ?? 0);
+
+  if (!validRate(nightRate)) {
+    throw new Error("Nhập lương đêm hợp lệ.");
+  }
+
+  const raw = splitMinutes(value.start, value.end);
+
+  if (
+    !Number.isInteger(rest) ||
+    rest < 0 ||
+    rest > raw.day
+  ) {
+    throw new Error(
+      `Nghỉ khung thường phải từ 0 đến ${raw.day} phút.`
+    );
+  }
+
+  if (
+    !Number.isInteger(nightRest) ||
+    nightRest < 0 ||
+    nightRest > raw.night
+  ) {
+    throw new Error(
+      `Nghỉ khung đêm phải từ 0 đến ${raw.night} phút.`
+    );
+  }
+
+  const dayMinutes = raw.day - rest;
+  const nightMinutes = raw.night - nightRest;
+  const minutes = dayMinutes + nightMinutes;
+
+  if (minutes <= 0) {
+    throw new Error(
+      "Ca phải còn thời gian thực làm sau khi trừ nghỉ."
+    );
+  }
+
+  return {
+    ...base,
+    payMode: "split",
+
     rate,
+    nightRate,
+
+    dayRest: rest,
+    nightRest,
+    rest: rest + nightRest,
+
+    dayMinutes,
+    nightMinutes,
     minutes,
 
-    pay: Math.round(minutes * rate / 60),
-
-    note: String(value.note || "").trim().slice(0, 300)
+    pay: Math.round(
+      (
+        dayMinutes * rate +
+        nightMinutes * nightRate
+      ) / 60
+    )
   };
 }
 
 export function monthRows(shifts, month, jobId = "") {
   return Object.entries(shifts || {})
-    .map(([id, shift]) => ({
-      ...shift,
-      id
-    }))
+    .map(([id, shift]) => ({ ...shift, id }))
     .filter(shift => {
       return (
         shift.date.startsWith(month) &&
@@ -126,11 +215,7 @@ export function summarize(rows) {
       pay: total.pay + shift.pay,
       count: total.count + 1
     }),
-    {
-      minutes: 0,
-      pay: 0,
-      count: 0
-    }
+    { minutes: 0, pay: 0, count: 0 }
   );
 }
 
