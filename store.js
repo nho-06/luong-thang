@@ -4,7 +4,7 @@ const OWNER = "Tz9fec60iPXfg5gYPYycYxaFPwG3";
 
 function checkPath(group, id) {
   if (
-    !["jobs", "shifts"].includes(group) ||
+    !["jobs", "shifts", "plans", "studies"].includes(group) ||
     typeof id !== "string" ||
     !id ||
     /[.#$\[\]\/\u0000-\u001F\u007F]/.test(id)
@@ -13,9 +13,18 @@ function checkPath(group, id) {
   }
 }
 
-export async function openStore(onData, onStatus, onAuthReady) {
-  if (!firebaseConfig.apiKey || !firebaseConfig.databaseURL) {
-    throw new Error("config.js cần có apiKey và databaseURL của dự án Firebase.");
+export async function openStore(
+  onData,
+  onStatus,
+  onAuthReady
+) {
+  if (
+    !firebaseConfig.apiKey ||
+    !firebaseConfig.databaseURL
+  ) {
+    throw new Error(
+      "config.js cần có apiKey và databaseURL của dự án Firebase."
+    );
   }
 
   onStatus("wait", "Đang kết nối Firebase…");
@@ -26,16 +35,34 @@ export async function openStore(onData, onStatus, onAuthReady) {
 
   try {
     [appSDK, authSDK, dbSDK] = await Promise.all([
-      import("https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js"),
-      import("https://www.gstatic.com/firebasejs/13.1.0/firebase-auth.js"),
-      import("https://www.gstatic.com/firebasejs/13.1.0/firebase-database.js")
+      import(
+        "https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js"
+      ),
+      import(
+        "https://www.gstatic.com/firebasejs/13.1.0/firebase-auth.js"
+      ),
+      import(
+        "https://www.gstatic.com/firebasejs/13.1.0/firebase-database.js"
+      )
     ]);
   } catch (error) {
-    console.error("[Lương tháng] Lỗi tải Firebase SDK", error);
-    throw new Error("Không tải được Firebase SDK từ www.gstatic.com. Xem lỗi gốc trong Console.");
+    console.error(
+      "[Lương tháng] Lỗi tải Firebase SDK",
+      error
+    );
+
+    throw new Error(
+      "Không tải được Firebase SDK từ www.gstatic.com. " +
+      "Xem lỗi gốc trong Console."
+    );
   }
 
-  const { initializeApp, getApps, getApp } = appSDK;
+  const {
+    initializeApp,
+    getApps,
+    getApp
+  } = appSDK;
+
   const {
     getAuth,
     setPersistence,
@@ -43,9 +70,19 @@ export async function openStore(onData, onStatus, onAuthReady) {
     signInWithPopup,
     GoogleAuthProvider
   } = authSDK;
-  const { getDatabase, ref, onValue, set, push } = dbSDK;
 
-  const app = getApps().some(app => app.name === "[DEFAULT]")
+  const {
+    getDatabase,
+    ref,
+    onValue,
+    set,
+    push,
+    update
+  } = dbSDK;
+
+  const app = getApps().some(
+    app => app.name === "[DEFAULT]"
+  )
     ? getApp()
     : initializeApp(firebaseConfig);
 
@@ -53,29 +90,51 @@ export async function openStore(onData, onStatus, onAuthReady) {
     app.options.projectId !== firebaseConfig.projectId ||
     app.options.apiKey !== firebaseConfig.apiKey
   ) {
-    throw new Error("Ứng dụng đang dùng cấu hình Firebase khác config.js.");
+    throw new Error(
+      "Ứng dụng đang dùng cấu hình Firebase khác config.js."
+    );
   }
 
   const auth = getAuth(app);
-  await setPersistence(auth, browserLocalPersistence);
+
+  await setPersistence(
+    auth,
+    browserLocalPersistence
+  );
+
   await auth.authStateReady();
 
-  onAuthReady(async () => {
-    const provider = new GoogleAuthProvider();
-    provider.setCustomParameters({ prompt: "select_account" });
+  onAuthReady(
+    async () => {
+      const provider = new GoogleAuthProvider();
 
-    await signInWithPopup(auth, provider);
-    location.reload();
-  }, auth.currentUser?.email);
+      provider.setCustomParameters({
+        prompt: "select_account"
+      });
+
+      await signInWithPopup(auth, provider);
+
+      location.reload();
+    },
+    auth.currentUser?.email
+  );
 
   const user = auth.currentUser;
 
   if (!user) {
-    onStatus("wait", "Đăng nhập Google để mở sổ");
+    onStatus(
+      "wait",
+      "Đăng nhập Google để mở sổ"
+    );
+
     return null;
   }
 
-  const db = getDatabase(app, firebaseConfig.databaseURL);
+  const db = getDatabase(
+    app,
+    firebaseConfig.databaseURL
+  );
+
   const userPath = `users/${OWNER}`;
   const userRef = ref(db, userPath);
 
@@ -85,20 +144,35 @@ export async function openStore(onData, onStatus, onAuthReady) {
 
   function showStatus() {
     if (failed) {
-      onStatus("error", "Chưa mở được sổ");
+      onStatus(
+        "error",
+        "Chưa mở được sổ"
+      );
     } else if (!connected) {
-      onStatus("wait", "Đang chờ kết nối…");
+      onStatus(
+        "wait",
+        "Đang chờ kết nối…"
+      );
     } else if (!loaded) {
-      onStatus("wait", "Đang tải sổ cũ…");
+      onStatus(
+        "wait",
+        "Đang tải sổ cũ…"
+      );
     } else {
-      onStatus("cloud", "Firebase · đã kết nối");
+      onStatus(
+        "cloud",
+        "Firebase · đã kết nối"
+      );
     }
   }
 
-  const stopConnection = onValue(ref(db, ".info/connected"), snapshot => {
-    connected = snapshot.val() === true;
-    showStatus();
-  });
+  const stopConnection = onValue(
+    ref(db, ".info/connected"),
+    snapshot => {
+      connected = snapshot.val() === true;
+      showStatus();
+    }
+  );
 
   let stopData;
 
@@ -110,7 +184,14 @@ export async function openStore(onData, onStatus, onAuthReady) {
           if (!snapshot.exists()) {
             failed = true;
             showStatus();
-            reject(new Error("Không tìm thấy sổ cũ. Kiểm tra databaseURL và nhánh users trong Firebase."));
+
+            reject(
+              new Error(
+                "Không tìm thấy sổ cũ. " +
+                "Kiểm tra databaseURL và nhánh users trong Firebase."
+              )
+            );
+
             return;
           }
 
@@ -118,46 +199,89 @@ export async function openStore(onData, onStatus, onAuthReady) {
 
           onData({
             jobs: value.jobs || {},
-            shifts: value.shifts || {}
+            shifts: value.shifts || {},
+            plans: value.plans || {},
+            studies: value.studies || {}
           });
 
           loaded = true;
           failed = false;
+
           showStatus();
           resolve();
         },
         error => {
           failed = true;
           showStatus();
-          console.error("[Lương tháng] Lỗi đọc sổ", error);
 
-          reject(new Error(
-            `Firebase từ chối đọc sổ (${error.code || error.message}). ` +
-            "Kiểm tra Gmail trong settings/ownerEmail và Rules đã Publish."
-          ));
+          console.error(
+            "[Lương tháng] Lỗi đọc sổ",
+            error
+          );
+
+          reject(
+            new Error(
+              `Firebase từ chối đọc sổ (${
+                error.code || error.message
+              }). ` +
+              "Kiểm tra Gmail trong settings/ownerEmail " +
+              "và Rules đã Publish."
+            )
+          );
         }
       );
     });
   } catch (error) {
     stopConnection();
     stopData?.();
+
     throw error;
   }
 
   return {
     id: () => push(userRef).key,
 
+    async putMany(group, rows) {
+      if (
+        auth.currentUser?.uid !== user.uid ||
+        failed ||
+        !loaded
+      ) {
+        throw new Error(
+          "Phiên truy cập đã thay đổi. Hãy tải lại trang."
+        );
+      }
+
+      const updates = {};
+
+      for (const [id, value] of Object.entries(rows)) {
+        checkPath(group, id);
+
+        updates[group + "/" + id] = value;
+      }
+
+      await update(userRef, updates);
+    },
+
     async put(group, id, value) {
       if (auth.currentUser?.uid !== user.uid) {
-        throw new Error("Phiên đã thay đổi. Hãy tải lại trang.");
+        throw new Error(
+          "Phiên đã thay đổi. Hãy tải lại trang."
+        );
       }
 
       if (failed || !loaded) {
-        throw new Error("Chưa có quyền truy cập sổ.");
+        throw new Error(
+          "Chưa có quyền truy cập sổ."
+        );
       }
 
       checkPath(group, id);
-      await set(ref(db, `${userPath}/${group}/${id}`), value);
+
+      await set(
+        ref(db, `${userPath}/${group}/${id}`),
+        value
+      );
     }
   };
 }

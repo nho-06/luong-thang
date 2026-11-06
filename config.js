@@ -1,9 +1,7 @@
 export const firebaseConfig = {
   apiKey: "AIzaSyCYAoYimDyHtMsCbyt6V40EWBWejUCw3dY",
   authDomain: "luong-thang.firebaseapp.com",
-
   databaseURL: "https://luong-thang-default-rtdb.firebaseio.com",
-
   projectId: "luong-thang",
   storageBucket: "luong-thang.firebasestorage.app",
   messagingSenderId: "870636510348",

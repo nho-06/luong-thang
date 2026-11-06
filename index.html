@@ -17,15 +17,24 @@
       </span>
     </a>
 
-    <span id="status" class="status" role="status">Đang mở sổ…</span>
+    <span id="status" class="status" role="status">
+      Đang mở sổ…
+    </span>
   </header>
 
   <main>
     <section class="intro">
       <div>
-        <span class="eyebrow">LÀM BAO NHIÊU · BIẾT BẤY NHIÊU</span>
+        <span class="eyebrow">
+          LÀM BAO NHIÊU · BIẾT BẤY NHIÊU
+        </span>
+
         <h1>Mỗi ca làm,<br>một khoản thu nhập.</h1>
-        <p>Theo dõi các công việc và tiền lương trong một cuốn sổ nhỏ.</p>
+
+        <p>
+          Theo dõi các công việc và tiền lương
+          trong một cuốn sổ nhỏ.
+        </p>
       </div>
 
       <div class="month-box">
@@ -36,15 +45,275 @@
     </section>
 
     <section class="panel" style="margin-bottom:16px">
-      <button id="google-sign-in" class="btn" type="button" disabled>
+      <button
+        id="google-sign-in"
+        class="btn"
+        type="button"
+        disabled
+      >
         Đăng nhập Google
       </button>
+
       <p id="account-email" class="hint">
-        Dùng Gmail đã được cấp quyền để mở sổ trên máy tính và điện thoại.
+        Dùng Gmail đã được cấp quyền để mở sổ
+        trên máy tính và điện thoại.
       </p>
     </section>
 
-    <div id="notice" class="notice" role="alert" hidden></div>
+    <div
+      id="notice"
+      class="notice"
+      role="alert"
+      hidden
+    ></div>
+
+    <section class="panel weekly-panel">
+      <div class="panel-head">
+        <h2>Lịch làm việc và lịch học tuần</h2>
+
+        <div>
+          <button
+            id="week-prev"
+            class="text-btn"
+            type="button"
+          >
+            ← Tuần trước
+          </button>
+
+          <button
+            id="week-next"
+            class="text-btn"
+            type="button"
+          >
+            Tuần sau →
+          </button>
+        </div>
+      </div>
+
+      <label>
+        Chọn ngày trong tuần
+        <input id="week-date" type="date" required>
+      </label>
+
+      <p id="week-summary" aria-live="polite"></p>
+
+      <form id="plan-form">
+        <fieldset id="plan-fields" disabled>
+          <div class="pair">
+            <label>
+              Công việc
+              <select id="plan-job" required></select>
+            </label>
+
+            <label>
+              Ngày làm
+              <input id="plan-date" type="date" required>
+            </label>
+          </div>
+
+          <div class="pair">
+            <label>
+              Giờ vào
+              <input id="plan-start" type="time" required>
+            </label>
+
+            <label>
+              Giờ ra
+              <input id="plan-end" type="time" required>
+            </label>
+          </div>
+
+          <div class="pair">
+            <label>
+              Lương thường / giờ
+              <input
+                id="plan-rate"
+                type="number"
+                min="1"
+                max="100000000"
+                step="1"
+                required
+              >
+            </label>
+
+            <label>
+              Lương đêm / giờ
+              <input
+                id="plan-night-rate"
+                type="number"
+                min="1"
+                max="100000000"
+                step="1"
+                required
+              >
+            </label>
+          </div>
+
+          <div class="pair">
+            <label>
+              Nghỉ khung thường (phút)
+              <input
+                id="plan-rest"
+                type="number"
+                min="0"
+                max="1439"
+                value="0"
+                required
+              >
+            </label>
+
+            <label>
+              Nghỉ khung đêm (phút)
+              <input
+                id="plan-night-rest"
+                type="number"
+                min="0"
+                max="1439"
+                value="0"
+                required
+              >
+            </label>
+          </div>
+
+          <p class="hint">
+            Khung đêm từ 22 giờ đến trước 10 giờ.
+            Ca qua đêm thuộc ngày bắt đầu.
+          </p>
+
+          <p id="plan-estimate" aria-live="polite"></p>
+
+          <button
+            id="plan-save"
+            class="btn"
+            type="submit"
+          >
+            Lưu lịch dự kiến
+          </button>
+
+          <button
+            id="plan-cancel"
+            class="text-btn"
+            type="button"
+            hidden
+          >
+            Hủy sửa
+          </button>
+        </fieldset>
+      </form>
+
+      <p id="plan-message" role="status"></p>
+
+      <details class="school-panel" open>
+        <summary>Thêm lịch học</summary>
+
+        <form id="school-form">
+          <fieldset id="school-fields" disabled>
+            <label>
+              Tên môn học
+              <input
+                id="school-name"
+                maxlength="100"
+                required
+              >
+            </label>
+
+            <div class="pair">
+              <label>
+                Ngày học đầu tiên
+                <input
+                  id="school-date"
+                  type="date"
+                  required
+                >
+              </label>
+
+              <label>
+                Phòng học
+                <input
+                  id="school-room"
+                  maxlength="100"
+                >
+              </label>
+            </div>
+
+            <div class="pair">
+              <label>
+                Giờ bắt đầu
+                <input
+                  id="school-start"
+                  type="time"
+                  required
+                >
+              </label>
+
+              <label>
+                Giờ kết thúc
+                <input
+                  id="school-end"
+                  type="time"
+                  required
+                >
+              </label>
+            </div>
+
+            <label
+              id="school-repeat-label"
+              class="school-repeat"
+            >
+              <input
+                id="school-repeat"
+                type="checkbox"
+              >
+              Lặp lại mỗi tuần
+            </label>
+
+            <label id="school-until-label" hidden>
+              Ngày kết thúc học kỳ
+              <input
+                id="school-until"
+                type="date"
+                disabled
+              >
+            </label>
+
+            <label>
+              Ghi chú
+              <input
+                id="school-note"
+                maxlength="300"
+              >
+            </label>
+
+            <p
+              id="school-preview"
+              class="hint"
+              aria-live="polite"
+            ></p>
+
+            <button
+              id="school-save"
+              class="btn"
+              type="submit"
+            >
+              Lưu lịch học
+            </button>
+
+            <button
+              id="school-cancel"
+              class="text-btn"
+              type="button"
+              hidden
+            >
+              Hủy sửa
+            </button>
+          </fieldset>
+        </form>
+
+        <p id="school-message" role="status"></p>
+      </details>
+
+      <div id="week-days" class="week-days"></div>
+    </section>
 
     <section class="stats">
       <article class="stat primary">
@@ -62,7 +331,10 @@
       <article class="stat">
         <span>Số ca làm</span>
         <strong id="count">0</strong>
-        <small id="job-count">0 công việc có ca trong tháng</small>
+
+        <small id="job-count">
+          0 công việc có ca trong tháng
+        </small>
       </article>
     </section>
 
@@ -71,16 +343,24 @@
         <section class="panel">
           <div class="panel-head">
             <div>
-              <span class="eyebrow">01 / CÔNG VIỆC</span>
+              <span class="eyebrow">
+                01 / CÔNG VIỆC
+              </span>
+
               <h2>Các nguồn thu nhập</h2>
             </div>
 
-            <button id="add-job" class="btn subtle" type="button">
+            <button
+              id="add-job"
+              class="btn subtle"
+              type="button"
+            >
               + Thêm việc
             </button>
           </div>
 
           <div id="jobs"></div>
+
           <div id="jobs-empty" class="empty">
             Thêm công việc đầu tiên và mức lương mỗi giờ.
           </div>
@@ -89,11 +369,21 @@
         <section class="panel">
           <div class="panel-head">
             <div>
-              <span class="eyebrow">02 / CA LÀM</span>
-              <h2 id="shift-title">Ghi lại một ca làm</h2>
+              <span class="eyebrow">
+                02 / CA LÀM
+              </span>
+
+              <h2 id="shift-title">
+                Ghi lại một ca làm
+              </h2>
             </div>
 
-            <button type="button" id="cancel-edit" class="text-btn" hidden>
+            <button
+              type="button"
+              id="cancel-edit"
+              class="text-btn"
+              hidden
+            >
               Hủy sửa
             </button>
           </div>
@@ -103,14 +393,20 @@
               <label>
                 Công việc
                 <select id="job" required>
-                  <option value="">Chọn công việc</option>
+                  <option value="">
+                    Chọn công việc
+                  </option>
                 </select>
               </label>
 
               <div class="pair">
                 <label>
                   Ngày làm
-                  <input type="date" id="date" required>
+                  <input
+                    type="date"
+                    id="date"
+                    required
+                  >
                 </label>
 
                 <label>
@@ -129,17 +425,35 @@
               <div class="triple">
                 <label>
                   Giờ vào
-                  <input type="time" id="start" required>
+                  <input
+                    type="time"
+                    id="start"
+                    required
+                  >
                 </label>
 
                 <label>
                   Giờ ra
-                  <input type="time" id="end" required>
+                  <input
+                    type="time"
+                    id="end"
+                    required
+                  >
                 </label>
 
                 <label>
-                  <span id="rest-label">Nghỉ khung thường (phút)</span>
-                  <input type="number" id="rest" value="0" min="0" step="1" required>
+                  <span id="rest-label">
+                    Nghỉ khung thường (phút)
+                  </span>
+
+                  <input
+                    type="number"
+                    id="rest"
+                    value="0"
+                    min="0"
+                    step="1"
+                    required
+                  >
                 </label>
               </div>
 
@@ -170,33 +484,62 @@
                 </label>
               </div>
 
-              <label style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
-                <input id="use-night" type="checkbox" checked style="width:auto;margin:0">
+              <label
+                style="display:flex;align-items:center;gap:8px;margin-bottom:12px"
+              >
+                <input
+                  id="use-night"
+                  type="checkbox"
+                  checked
+                  style="width:auto;margin:0"
+                >
                 Tính hai mức lương: thường / đêm
               </label>
 
-              <p id="legacy-hint" class="hint" hidden>
-                Ca cũ đang giữ cách tính một mức. Chỉ bật hai mức nếu muốn tính lại ca này.
+              <p
+                id="legacy-hint"
+                class="hint"
+                hidden
+              >
+                Ca cũ đang giữ cách tính một mức.
+                Chỉ bật hai mức nếu muốn tính lại ca này.
               </p>
 
               <label>
                 Ghi chú
-                <span class="optional">· không bắt buộc</span>
-                <input id="note" maxlength="300" placeholder="Ví dụ: ca tối, đổi ca…">
+
+                <span class="optional">
+                  · không bắt buộc
+                </span>
+
+                <input
+                  id="note"
+                  maxlength="300"
+                  placeholder="Ví dụ: ca tối, đổi ca…"
+                >
               </label>
 
               <div class="estimate">
-                <span id="estimate-time">Nhập giờ để xem tiền ca</span>
+                <span id="estimate-time">
+                  Nhập giờ để xem tiền ca
+                </span>
+
                 <strong id="estimate-pay">—</strong>
               </div>
 
-              <button id="save-shift" class="btn full" type="submit">
+              <button
+                id="save-shift"
+                class="btn full"
+                type="submit"
+              >
                 + Lưu ca làm
               </button>
 
               <p class="hint">
-                Lương thường: 10:00–trước 22:00. Lương đêm: 22:00–trước 10:00 hôm sau.
-                Nhập phút nghỉ đúng khung. Ca qua đêm được tính vào ngày bắt đầu.
+                Lương thường: 10:00–trước 22:00.
+                Lương đêm: 22:00–trước 10:00 hôm sau.
+                Nhập phút nghỉ đúng khung.
+                Ca qua đêm được tính vào ngày bắt đầu.
                 Các ca cũ không tự đổi tiền.
               </p>
             </fieldset>
@@ -207,24 +550,44 @@
       <section class="panel history">
         <div class="panel-head">
           <div>
-            <span class="eyebrow">03 / LỊCH SỬ</span>
+            <span class="eyebrow">
+              03 / LỊCH SỬ
+            </span>
+
             <h2>Những ca đã ghi</h2>
           </div>
 
-          <button id="export" class="text-btn" type="button">Xuất CSV</button>
+          <button
+            id="export"
+            class="text-btn"
+            type="button"
+          >
+            Xuất CSV
+          </button>
         </div>
 
         <label class="filter">
           Lọc công việc
+
           <select id="filter">
-            <option value="">Tất cả công việc</option>
+            <option value="">
+              Tất cả công việc
+            </option>
           </select>
         </label>
 
-        <div id="history-empty" class="empty large">
+        <div
+          id="history-empty"
+          class="empty large"
+        >
           <span class="empty-icon">◷</span>
+
           <h3>Tháng này chưa có ca làm</h3>
-          <p>Ghi ca đầu tiên ở bên trái.<br>Tiền lương sẽ được cộng tự động.</p>
+
+          <p>
+            Ghi ca đầu tiên ở bên trái.<br>
+            Tiền lương sẽ được cộng tự động.
+          </p>
         </div>
 
         <div class="table-scroll">
@@ -237,6 +600,7 @@
                 <th>Thao tác</th>
               </tr>
             </thead>
+
             <tbody id="rows"></tbody>
           </table>
         </div>
@@ -249,8 +613,15 @@
     </div>
 
     <footer class="page-footer">
-      <span>Một chút rõ ràng cho mỗi tháng bận rộn.</span>
-      <button class="text-btn" id="backup" type="button">
+      <span>
+        Một chút rõ ràng cho mỗi tháng bận rộn.
+      </span>
+
+      <button
+        class="text-btn"
+        id="backup"
+        type="button"
+      >
         Tải bản sao dữ liệu
       </button>
     </footer>
@@ -260,14 +631,25 @@
     <form id="job-form">
       <div class="panel-head">
         <h2 id="job-title">Thêm công việc</h2>
-        <button id="close-dialog" type="button" class="text-btn" aria-label="Đóng">
+
+        <button
+          id="close-dialog"
+          type="button"
+          class="text-btn"
+          aria-label="Đóng"
+        >
           ✕
         </button>
       </div>
 
       <label>
         Tên công việc
-        <input id="job-name" required maxlength="60" placeholder="Ví dụ: Shop phụ kiện">
+        <input
+          id="job-name"
+          required
+          maxlength="60"
+          placeholder="Ví dụ: Shop phụ kiện"
+        >
       </label>
 
       <label>
@@ -297,12 +679,19 @@
       </label>
 
       <p class="hint">
-        Thường: 10:00–trước 22:00. Đêm: 22:00–trước 10:00 hôm sau.
+        Thường: 10:00–trước 22:00.
+        Đêm: 22:00–trước 10:00 hôm sau.
         Đây là lương mặc định cho ca mới.
         Bạn vẫn có thể đổi riêng từng ca.
       </p>
 
-      <button class="btn full" id="save-job" type="submit">Lưu công việc</button>
+      <button
+        class="btn full"
+        id="save-job"
+        type="submit"
+      >
+        Lưu công việc
+      </button>
     </form>
   </dialog>
 
