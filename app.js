@@ -1,12 +1,25 @@
+import { initJobShifts, jobColor } from "./job-shifts.js";
 import { initSchool } from "./school.js";
 import { openStore } from "./store.js";
-import { makeShift, monthRows, summarize, currency, duration } from "./core.js";
+import {
+  makeShift,
+  monthRows,
+  summarize,
+  currency,
+  duration
+} from "./core.js";
 
 const el = id => document.getElementById(id);
 const HOUR_HEIGHT = 48;
 const MINUTE_HEIGHT = HOUR_HEIGHT / 60;
 
-let data = { jobs: {}, shifts: {}, plans: {}, studies: {} };
+let data = {
+  jobs: {},
+  shifts: {},
+  plans: {},
+  studies: {}
+};
+
 let store = null;
 let editingShift = null;
 let editingJob = null;
@@ -19,6 +32,13 @@ const school = initSchool({
   getData: () => data,
   getStore: () => store,
   today
+});
+
+const jobShifts = initJobShifts({
+  getData: () => data,
+  isBusy: () => busy,
+  onShiftChange: updateEstimate,
+  onPlanChange: estimatePlan
 });
 
 function setText(id, value) {
@@ -65,7 +85,10 @@ function updateOptions(select, placeholder, jobs) {
   );
 
   select.value = previous;
-  if (select.selectedIndex === -1) select.selectedIndex = 0;
+
+  if (select.selectedIndex === -1) {
+    select.selectedIndex = 0;
+  }
 }
 
 function render() {
@@ -86,19 +109,25 @@ function render() {
   setText("total", currency(summary.pay));
   setText("hours", duration(summary.minutes));
   setText("count", summary.count);
-  setText("job-count", `${workingJobs.size} công việc có ca trong tháng`);
+  setText(
+    "job-count",
+    `${workingJobs.size} công việc có ca trong tháng`
+  );
 
-  const jobs = Object.entries(data.jobs)
-    .sort((a, b) => a[1].name.localeCompare(b[1].name, "vi"));
+  const jobs = Object.entries(data.jobs).sort(
+    (a, b) => a[1].name.localeCompare(b[1].name, "vi")
+  );
 
   updateOptions(el("job"), "Chọn công việc", jobs);
   updateOptions(el("filter"), "Tất cả công việc", jobs);
+  jobShifts.refresh();
 
   el("jobs-empty").hidden = jobs.length > 0;
 
   el("jobs").innerHTML = jobs.map(([id, job]) => {
-    const jobRows = allRows.filter(shift => shift.jobId === id);
-    const total = summarize(jobRows);
+    const total = summarize(
+      allRows.filter(shift => shift.jobId === id)
+    );
 
     return `
       <div class="job-card">
@@ -114,22 +143,33 @@ function render() {
 
         <div class="job-money">
           ${currency(total.pay)}
-          <small>${total.count} ca · ${duration(total.minutes)}</small>
+          <small>
+            ${total.count} ca · ${duration(total.minutes)}
+          </small>
         </div>
 
         <div class="job-actions">
-          <button type="button" class="text-btn" data-edit-job="${escapeHTML(id)}">
-            Sửa
-          </button>
-          <button type="button" class="text-btn" data-delete-job="${escapeHTML(id)}">
-            Xóa
-          </button>
+          <button
+            type="button"
+            class="text-btn"
+            data-edit-job="${escapeHTML(id)}"
+          >Sửa</button>
+
+          <button
+            type="button"
+            class="text-btn"
+            data-delete-job="${escapeHTML(id)}"
+          >Xóa</button>
         </div>
       </div>
     `;
   }).join("");
 
-  const filteredRows = monthRows(data.shifts, month, el("filter").value);
+  const filteredRows = monthRows(
+    data.shifts,
+    month,
+    el("filter").value
+  );
 
   el("table").hidden = filteredRows.length === 0;
   el("history-empty").hidden = filteredRows.length > 0;
@@ -140,8 +180,10 @@ function render() {
     const overnight = shift.end < shift.start ? " · qua đêm" : "";
 
     const rateDetails = shift.payMode === "split"
-      ? `Thường ${duration(shift.dayMinutes)} × ${currency(shift.rate)}/giờ<br>
-         Đêm ${duration(shift.nightMinutes)} × ${currency(shift.nightRate)}/giờ`
+      ? `Thường ${duration(shift.dayMinutes)}
+         × ${currency(shift.rate)}/giờ<br>
+         Đêm ${duration(shift.nightMinutes)}
+         × ${currency(shift.nightRate)}/giờ`
       : `${currency(shift.rate)}/giờ · ca cũ một mức`;
 
     return `
@@ -154,7 +196,9 @@ function render() {
 
         <td>
           ${escapeHTML(shift.start)} – ${escapeHTML(shift.end)}
-          <small>${duration(shift.minutes)}${restText}${overnight}</small>
+          <small>
+            ${duration(shift.minutes)}${restText}${overnight}
+          </small>
         </td>
 
         <td>
@@ -163,18 +207,26 @@ function render() {
         </td>
 
         <td>
-          <button type="button" class="text-btn" data-edit-shift="${escapeHTML(shift.id)}">
-            Sửa
-          </button>
-          <button type="button" class="text-btn" data-delete-shift="${escapeHTML(shift.id)}">
-            Xóa
-          </button>
+          <button
+            type="button"
+            class="text-btn"
+            data-edit-shift="${escapeHTML(shift.id)}"
+          >Sửa</button>
+
+          <button
+            type="button"
+            class="text-btn"
+            data-delete-shift="${escapeHTML(shift.id)}"
+          >Xóa</button>
         </td>
       </tr>
     `;
   }).join("");
 
-  setText("filtered-total", currency(summarize(filteredRows).pay));
+  setText(
+    "filtered-total",
+    currency(summarize(filteredRows).pay)
+  );
 }
 
 function getShiftFromForm() {
@@ -215,6 +267,7 @@ function updateEstimate() {
       "estimate-time",
       hasTimes ? error.message : "Nhập giờ để xem tiền ca"
     );
+
     setText("estimate-pay", "—");
   }
 }
@@ -252,6 +305,8 @@ async function mutate(action, message) {
   busy = true;
   el("shift-fields").disabled = true;
   el("save-job").disabled = true;
+  el("job-template-fields").disabled = true;
+
   setText("save-shift", "Đang lưu…");
 
   try {
@@ -265,7 +320,12 @@ async function mutate(action, message) {
     busy = false;
     el("shift-fields").disabled = false;
     el("save-job").disabled = false;
-    setText("save-shift", editingShift ? "Lưu thay đổi" : "+ Lưu ca làm");
+    el("job-template-fields").disabled = false;
+
+    setText(
+      "save-shift",
+      editingShift ? "Lưu thay đổi" : "+ Lưu ca làm"
+    );
   }
 }
 
@@ -292,10 +352,10 @@ el("month").addEventListener("change", () => {
 el("filter").addEventListener("change", render);
 
 el("job").addEventListener("change", () => {
-  const selectedJob = data.jobs[el("job").value];
+  const job = data.jobs[el("job").value];
 
-  el("rate").value = selectedJob?.rate || "";
-  el("night-rate").value = selectedJob?.nightRate ?? selectedJob?.rate ?? "";
+  el("rate").value = job?.rate || "";
+  el("night-rate").value = job?.nightRate ?? job?.rate ?? "";
 
   updateEstimate();
 });
@@ -308,6 +368,7 @@ el("cancel-edit").addEventListener("click", () => {
 
 el("shift-form").addEventListener("submit", async event => {
   event.preventDefault();
+
   if (busy || !store) return;
 
   try {
@@ -322,6 +383,7 @@ el("shift-form").addEventListener("submit", async event => {
     if (saved) {
       el("month").value = shift.date.slice(0, 7);
       el("filter").value = "";
+
       resetShiftForm();
       render();
     }
@@ -336,11 +398,16 @@ function showJobDialog(id = null) {
   editingJob = id;
   const job = data.jobs[id];
 
-  setText("job-title", job ? "Sửa công việc" : "Thêm công việc");
+  setText(
+    "job-title",
+    job ? "Sửa công việc" : "Thêm công việc"
+  );
 
   el("job-name").value = job?.name || "";
   el("job-rate").value = job?.rate || "";
   el("job-night-rate").value = job?.nightRate ?? job?.rate ?? "";
+
+  jobShifts.edit(job);
   el("job-dialog").showModal();
 }
 
@@ -356,6 +423,7 @@ el("job-dialog").addEventListener("cancel", event => {
 
 el("job-form").addEventListener("submit", async event => {
   event.preventDefault();
+
   if (!store || busy) return;
 
   const name = el("job-name").value.trim();
@@ -372,24 +440,41 @@ el("job-form").addEventListener("submit", async event => {
     nightRate <= 0 ||
     nightRate > 100000000
   ) {
-    notice("Nhập tên và lương giờ hợp lệ.");
+    el("template-message").textContent =
+      "Nhập tên và lương giờ hợp lệ.";
     return;
   }
 
-  const duplicate = Object.entries(data.jobs).some(([id, job]) =>
-    id !== editingJob &&
-    job.name.toLocaleLowerCase("vi") === name.toLocaleLowerCase("vi")
+  const duplicate = Object.entries(data.jobs).some(
+    ([id, job]) =>
+      id !== editingJob &&
+      job.name.toLocaleLowerCase("vi") === name.toLocaleLowerCase("vi")
   );
 
   if (duplicate) {
-    notice("Tên công việc này đã có.");
+    el("template-message").textContent =
+      "Tên công việc này đã có.";
+    return;
+  }
+
+  let settings;
+
+  try {
+    settings = jobShifts.read();
+  } catch (error) {
+    el("template-message").textContent = error.message;
     return;
   }
 
   const id = editingJob || store.id();
 
   const saved = await mutate(
-    () => store.put("jobs", id, { name, rate, nightRate }),
+    () => store.put("jobs", id, {
+      name,
+      rate,
+      nightRate,
+      ...settings
+    }),
     "Đã lưu công việc."
   );
 
@@ -398,15 +483,22 @@ el("job-form").addEventListener("submit", async event => {
 
     if (!editingShift) {
       el("job").value = id;
+      jobShifts.refresh();
+
       el("rate").value = rate;
       el("night-rate").value = nightRate;
+
       updateEstimate();
     }
+  } else {
+    el("template-message").textContent =
+      el("notice").textContent;
   }
 });
 
 document.addEventListener("click", async event => {
   const button = event.target.closest("button");
+
   if (!button || busy || !store) return;
 
   if (button.dataset.editJob) {
@@ -420,6 +512,7 @@ document.addEventListener("click", async event => {
     const hasShifts = Object.values(data.shifts).some(
       shift => shift.jobId === id
     );
+
     const hasPlans = Object.values(data.plans || {}).some(
       plan => plan.jobId === id
     );
@@ -445,10 +538,12 @@ document.addEventListener("click", async event => {
   if (button.dataset.editShift) {
     const id = button.dataset.editShift;
     const shift = data.shifts[id];
+
     if (!shift) return;
 
     editingShift = id;
     el("job").value = shift.jobId;
+    jobShifts.refresh();
 
     for (const field of ["date", "start", "end", "rate", "note"]) {
       el(field).value = shift[field] ?? "";
@@ -456,22 +551,34 @@ document.addEventListener("click", async event => {
 
     el("use-night").checked = shift.payMode === "split";
     el("night-rate").value = shift.nightRate ?? shift.rate;
-    el("rest").value = shift.payMode === "split" ? shift.dayRest : shift.rest;
+
+    el("rest").value = shift.payMode === "split"
+      ? shift.dayRest
+      : shift.rest;
+
     el("night-rest").value = shift.nightRest ?? 0;
     el("legacy-hint").hidden = shift.payMode === "split";
     el("cancel-edit").hidden = false;
+    el("shift-template").value = "";
 
     updateNightFields();
+
     setText("shift-title", "Sửa ca làm");
     setText("save-shift", "Lưu thay đổi");
+
     updateEstimate();
 
-    el("shift-form").scrollIntoView({ behavior: "smooth", block: "center" });
+    el("shift-form").scrollIntoView({
+      behavior: "smooth",
+      block: "center"
+    });
+
     return;
   }
 
   if (button.dataset.deleteShift) {
     const id = button.dataset.deleteShift;
+
     if (!confirm("Xóa ca làm này?")) return;
 
     const deleted = await mutate(
@@ -479,7 +586,9 @@ document.addEventListener("click", async event => {
       "Đã xóa ca làm."
     );
 
-    if (deleted && editingShift === id) resetShiftForm();
+    if (deleted && editingShift === id) {
+      resetShiftForm();
+    }
   }
 });
 
@@ -514,7 +623,11 @@ el("backup").addEventListener("click", () => {
 el("export").addEventListener("click", () => {
   if (!store) return;
 
-  const rows = monthRows(data.shifts, el("month").value, el("filter").value);
+  const rows = monthRows(
+    data.shifts,
+    el("month").value,
+    el("filter").value
+  );
 
   if (!rows.length) {
     notice("Chưa có ca làm để xuất.");
@@ -524,7 +637,6 @@ el("export").addEventListener("click", () => {
   function csvCell(value) {
     let text = String(value ?? "");
 
-    // Tránh nội dung ghi chú bị Excel hiểu là công thức.
     if (/^[=+@\-\t\r]/.test(text)) {
       text = "'" + text;
     }
@@ -536,9 +648,10 @@ el("export").addEventListener("click", () => {
     [
       "Ngày", "Công việc", "Giờ vào", "Giờ ra", "Nghỉ (phút)",
       "Thực làm (phút)", "Lương giờ", "Tiền công", "Ghi chú",
-      "Lương đêm", "Phút thường", "Phút đêm", "Nghỉ thường", "Nghỉ đêm",
-      "Cách tính"
+      "Lương đêm", "Phút thường", "Phút đêm",
+      "Nghỉ thường", "Nghỉ đêm", "Cách tính"
     ],
+
     ...rows.map(shift => [
       shift.date,
       shift.jobName,
@@ -562,17 +675,24 @@ el("export").addEventListener("click", () => {
     row => row.map(csvCell).join(",")
   ).join("\r\n");
 
-  download(csv, `luong-${el("month").value}.csv`, "text/csv;charset=utf-8");
+  download(
+    csv,
+    `luong-${el("month").value}.csv`,
+    "text/csv;charset=utf-8"
+  );
 });
 
 function addDays(date, amount) {
   const value = new Date(date + "T12:00:00Z");
+
   value.setUTCDate(value.getUTCDate() + amount);
+
   return value.toISOString().slice(0, 10);
 }
 
 function monday(date) {
   const day = new Date(date + "T12:00:00Z").getUTCDay();
+
   return addDays(date, -((day + 6) % 7));
 }
 
@@ -615,11 +735,18 @@ function calendarEntries() {
   return entries;
 }
 
+function calendarColor(entry) {
+  if (entry.source === "study") return "blue";
+
+  return jobColor(data.jobs[entry.jobId], entry.jobName);
+}
+
 function weekSegments(entries, first) {
   const days = Array.from({ length: 7 }, () => []);
 
   function minuteOfDay(time) {
     const [hours, minutes] = time.split(":").map(Number);
+
     return hours * 60 + minutes;
   }
 
@@ -644,8 +771,10 @@ function weekSegments(entries, first) {
 
     for (const part of parts) {
       const index = Math.round(
-        (Date.parse(part.date + "T12:00:00Z") -
-          Date.parse(first + "T12:00:00Z")) / 86400000
+        (
+          Date.parse(part.date + "T12:00:00Z") -
+          Date.parse(first + "T12:00:00Z")
+        ) / 86400000
       );
 
       if (index >= 0 && index < 7 && part.end > part.start) {
@@ -665,40 +794,60 @@ function renderWeek() {
   const first = monday(el("week-date").value || today());
   const last = addDays(first, 6);
   const container = el("week-days");
-  const previousScroll = container.querySelector(".week-timeline-scroll");
+
+  const previousScroll = container.querySelector(
+    ".week-timeline-scroll"
+  );
 
   const scrollTop = previousScroll?.scrollTop ?? 7 * HOUR_HEIGHT;
   const scrollLeft = previousScroll?.scrollLeft ?? 0;
 
-  updateOptions(el("plan-job"), "Chọn công việc", Object.entries(data.jobs));
+  updateOptions(
+    el("plan-job"),
+    "Chọn công việc",
+    Object.entries(data.jobs)
+  );
 
   if (showingAttendance) {
     const jobs = new Map(Object.entries(data.jobs));
 
     for (const shift of Object.values(data.shifts || {})) {
       if (shift.jobId && !jobs.has(shift.jobId)) {
-        jobs.set(shift.jobId, { name: shift.jobName || "Công việc cũ" });
+        jobs.set(shift.jobId, {
+          name: shift.jobName || "Công việc cũ"
+        });
       }
     }
 
     updateOptions(
       el("attendance-filter"),
       "Tất cả công việc",
-      [...jobs].sort((a, b) => a[1].name.localeCompare(b[1].name, "vi"))
+      [...jobs].sort(
+        (a, b) => a[1].name.localeCompare(b[1].name, "vi")
+      )
     );
   }
 
   const entries = calendarEntries();
-  const weekRows = Object.values(entries)
-    .filter(row => row.date >= first && row.date <= last);
 
-  const total = summarize(weekRows.filter(row => row.source !== "study"));
-  const studyCount = weekRows.filter(row => row.source === "study").length;
+  const weekRows = Object.values(entries).filter(
+    row => row.date >= first && row.date <= last
+  );
+
+  const total = summarize(
+    weekRows.filter(row => row.source !== "study")
+  );
+
+  const studyCount = weekRows.filter(
+    row => row.source === "study"
+  ).length;
 
   const firstLabel = first.split("-").reverse().join("/");
   const lastLabel = last.split("-").reverse().join("/");
   const summaryLabel = showingAttendance ? "Đã chấm công" : "Dự kiến";
-  const studySummary = showingAttendance ? "" : ` · ${studyCount} buổi học`;
+  const studySummary = showingAttendance
+    ? ""
+    : ` · ${studyCount} buổi học`;
 
   setText(
     "week-summary",
@@ -727,20 +876,31 @@ function renderWeek() {
   const hours = Array.from(
     { length: 24 },
     (_, hour) => `
-      <div class="week-hour" style="top:${hour * HOUR_HEIGHT}px">
+      <div
+        class="week-hour"
+        style="top:${hour * HOUR_HEIGHT}px"
+      >
         ${String(hour).padStart(2, "0")}:00
       </div>
     `
   ).join("");
 
   const columns = segments.map((rows, index) => {
-    rows.sort((a, b) => a.start - b.start || b.end - a.end);
+    rows.sort(
+      (a, b) => a.start - b.start || b.end - a.end
+    );
+
     const laneEnds = [];
 
     const placed = rows.map(row => {
       let lane = laneEnds.findIndex(end => end <= row.start);
+
       if (lane === -1) lane = laneEnds.length;
-      laneEnds[lane] = Math.max(row.end, row.start + 8 / MINUTE_HEIGHT);
+
+      laneEnds[lane] = Math.max(
+        row.end,
+        row.start + 8 / MINUTE_HEIGHT
+      );
 
       return { ...row, lane };
     });
@@ -769,16 +929,26 @@ function renderWeek() {
         study: "Lịch học"
       }[entry.source];
 
-      const height = Math.max(8, (row.end - row.start) * MINUTE_HEIGHT);
+      const height = Math.max(
+        8,
+        (row.end - row.start) * MINUTE_HEIGHT
+      );
 
       let details = currency(entry.pay) + " / cả ca";
-      if (entry.source === "study") details = escapeHTML(entry.room || "");
-      if (row.continued) details = "Tiếp từ hôm trước";
+
+      if (entry.source === "study") {
+        details = escapeHTML(entry.room || "");
+      }
+
+      if (row.continued) {
+        details = "Tiếp từ hôm trước";
+      }
 
       return `
         <div
           class="week-time-block"
           data-source="${entry.source}"
+          data-color="${calendarColor(entry)}"
           style="
             top:${row.start * MINUTE_HEIGHT}px;
             height:${height}px;
@@ -789,7 +959,9 @@ function renderWeek() {
         >
           <strong>${escapeHTML(entry.jobName)}</strong>
           <small>${sourceLabel}</small>
-          <span>${escapeHTML(entry.start)}–${escapeHTML(entry.end)}</span>
+          <span>
+            ${escapeHTML(entry.start)}–${escapeHTML(entry.end)}
+          </span>
           <small>${details}</small>
 
           <div class="week-time-actions">
@@ -812,15 +984,18 @@ function renderWeek() {
     }).join("");
 
     return `
-      <div class="week-time-column" aria-label="${names[index]}">
+      <div
+        class="week-time-column"
+        aria-label="${names[index]}"
+      >
         ${blocks}
       </div>
     `;
   }).join("");
 
   const legend = showingAttendance
-    ? "Xanh lá là ca đã chấm công."
-    : "Vàng là ca dự kiến, xanh dương là lịch học.";
+    ? "Màu ô theo màu đã chọn trong công việc."
+    : "Xanh dương là lịch học, vàng kem và hồng là các công việc.";
 
   container.innerHTML = `
     <p class="hint">
@@ -833,9 +1008,12 @@ function renderWeek() {
     <div
       class="week-timeline-scroll"
       tabindex="0"
-      aria-label="${showingAttendance ? "Lịch chấm công theo tuần" : "Lịch dự kiến theo tuần"}"
+      aria-label="Lịch tuần theo giờ"
     >
-      <div class="week-timeline" style="--week-hour-height:${HOUR_HEIGHT}px">
+      <div
+        class="week-timeline"
+        style="--week-hour-height:${HOUR_HEIGHT}px"
+      >
         <div class="week-timeline-heading">
           <div class="week-hour-heading">Giờ</div>
           ${headings}
@@ -849,7 +1027,10 @@ function renderWeek() {
     </div>
   `;
 
-  const scroller = container.querySelector(".week-timeline-scroll");
+  const scroller = container.querySelector(
+    ".week-timeline-scroll"
+  );
+
   scroller.scrollTop = scrollTop;
   scroller.scrollLeft = scrollLeft;
 }
@@ -878,7 +1059,9 @@ function estimatePlan() {
 
     setText(
       "plan-estimate",
-      duration(plan.minutes) + " · Dự kiến " + currency(plan.pay)
+      duration(plan.minutes) +
+      " · Dự kiến " +
+      currency(plan.pay)
     );
   } catch (error) {
     setText("plan-estimate", error.message);
@@ -887,6 +1070,7 @@ function estimatePlan() {
 
 function resetPlan() {
   editingPlan = null;
+
   el("plan-form").reset();
   el("plan-date").value = el("week-date").value || today();
   el("plan-cancel").hidden = true;
@@ -898,14 +1082,24 @@ function resetPlan() {
 el("attendance-toggle").addEventListener("click", () => {
   showingAttendance = !showingAttendance;
 
-  el("attendance-toggle").setAttribute("aria-pressed", String(showingAttendance));
+  el("attendance-toggle").setAttribute(
+    "aria-pressed",
+    String(showingAttendance)
+  );
+
   el("planning-tools").hidden = showingAttendance;
   el("attendance-filter-field").hidden = !showingAttendance;
 
-  setText("week-title", showingAttendance ? "Lịch chấm công" : "Lịch dự kiến");
+  setText(
+    "week-title",
+    showingAttendance ? "Lịch chấm công" : "Lịch dự kiến"
+  );
+
   setText(
     "attendance-toggle",
-    showingAttendance ? "Quay lại lịch dự kiến" : "Xem lịch chấm công"
+    showingAttendance
+      ? "Quay lại lịch dự kiến"
+      : "Xem lịch chấm công"
   );
 
   renderWeek();
@@ -920,12 +1114,20 @@ el("week-current").addEventListener("click", () => {
 });
 
 el("week-prev").addEventListener("click", () => {
-  el("week-date").value = addDays(el("week-date").value || today(), -7);
+  el("week-date").value = addDays(
+    el("week-date").value || today(),
+    -7
+  );
+
   renderWeek();
 });
 
 el("week-next").addEventListener("click", () => {
-  el("week-date").value = addDays(el("week-date").value || today(), 7);
+  el("week-date").value = addDays(
+    el("week-date").value || today(),
+    7
+  );
+
   renderWeek();
 });
 
@@ -946,6 +1148,7 @@ el("plan-cancel").addEventListener("click", () => {
 
 el("plan-form").addEventListener("submit", async event => {
   event.preventDefault();
+
   if (!store || planBusy) return;
 
   planBusy = true;
@@ -953,15 +1156,29 @@ el("plan-form").addEventListener("submit", async event => {
 
   try {
     const plan = planFromForm();
-    await store.put("plans", editingPlan || store.id(), plan);
 
-    if (!showingAttendance) el("week-date").value = plan.date;
+    await store.put(
+      "plans",
+      editingPlan || store.id(),
+      plan
+    );
+
+    if (!showingAttendance) {
+      el("week-date").value = plan.date;
+    }
 
     resetPlan();
     renderWeek();
-    setText("plan-message", "Đã lưu lịch dự kiến lên Firebase.");
+
+    setText(
+      "plan-message",
+      "Đã lưu lịch dự kiến lên Firebase."
+    );
   } catch (error) {
-    setText("plan-message", "Chưa lưu được lịch. " + error.message);
+    setText(
+      "plan-message",
+      "Chưa lưu được lịch. " + error.message
+    );
   } finally {
     planBusy = false;
     el("plan-fields").disabled = false;
@@ -970,9 +1187,13 @@ el("plan-form").addEventListener("submit", async event => {
 
 el("week-days").addEventListener("click", async event => {
   const button = event.target.closest("button");
+
   if (!button || !store || planBusy) return;
 
-  const id = button.dataset.planEdit || button.dataset.planDelete;
+  const id =
+    button.dataset.planEdit ||
+    button.dataset.planDelete;
+
   if (!id) return;
 
   const plan = data.plans?.[id];
@@ -981,6 +1202,7 @@ el("week-days").addEventListener("click", async event => {
   if (button.dataset.planEdit) {
     editingPlan = id;
     el("plan-job").value = plan.jobId;
+    jobShifts.refresh();
 
     for (const field of ["date", "start", "end", "rate"]) {
       el("plan-" + field).value = plan[field];
@@ -990,6 +1212,7 @@ el("week-days").addEventListener("click", async event => {
     el("plan-rest").value = plan.dayRest;
     el("plan-night-rest").value = plan.nightRest;
     el("plan-cancel").hidden = false;
+    el("plan-template").value = "";
 
     setText("plan-save", "Lưu thay đổi lịch");
     estimatePlan();
@@ -1009,11 +1232,15 @@ el("week-days").addEventListener("click", async event => {
 
   try {
     await store.put("plans", id, null);
+
     if (editingPlan === id) resetPlan();
 
     setText("plan-message", "Đã xóa ca dự kiến.");
   } catch (error) {
-    setText("plan-message", "Chưa xóa được. " + error.message);
+    setText(
+      "plan-message",
+      "Chưa xóa được. " + error.message
+    );
   } finally {
     planBusy = false;
     el("plan-fields").disabled = false;
@@ -1036,7 +1263,9 @@ openStore(
     const button = el("google-sign-in");
     button.disabled = false;
 
-    if (email) setText("account-email", email);
+    if (email) {
+      setText("account-email", email);
+    }
 
     button.addEventListener("click", async () => {
       button.disabled = true;
@@ -1044,7 +1273,11 @@ openStore(
       try {
         await signIn();
       } catch (error) {
-        notice("Đăng nhập Google chưa thành công. " + error.message);
+        notice(
+          "Đăng nhập Google chưa thành công. " +
+          error.message
+        );
+
         button.disabled = false;
       }
     });
