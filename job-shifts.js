@@ -21,6 +21,8 @@ export function initJobShifts({
   const el = id => document.getElementById(id);
   const editor = el("job-templates");
 
+  let serial = 0;
+
   const fields = [
     {
       job: "job",
@@ -38,8 +40,20 @@ export function initJobShifts({
     }
   ];
 
+  function newId() {
+    return (
+      globalThis.crypto?.randomUUID?.() ||
+      "ca_" + Date.now().toString(36) + "_" + (++serial)
+    );
+  }
+
+  function updateEmpty() {
+    el("templates-empty").hidden = editor.children.length > 0;
+  }
+
   function addRow(id, template) {
     const row = document.createElement("div");
+
     row.className = "template-row";
     row.dataset.templateId = id;
 
@@ -54,6 +68,7 @@ export function initJobShifts({
       wrapper.textContent = label;
 
       const input = document.createElement("input");
+
       input.type = type;
       input.dataset.field = field;
       input.value = template[field] || "";
@@ -68,18 +83,22 @@ export function initJobShifts({
     }
 
     const remove = document.createElement("button");
+
     remove.type = "button";
     remove.className = "text-btn";
     remove.textContent = "Xóa ca";
 
     remove.addEventListener("click", () => {
-      if (!isBusy()) {
-        row.remove();
-      }
+      if (isBusy()) return;
+
+      row.remove();
+      updateEmpty();
     });
 
     row.append(remove);
     editor.append(row);
+
+    updateEmpty();
   }
 
   el("add-template").addEventListener("click", () => {
@@ -93,12 +112,58 @@ export function initJobShifts({
 
     el("template-message").textContent = "";
 
-    addRow(crypto.randomUUID(), {
+    addRow(newId(), {
       name: "Ca " + (editor.children.length + 1),
       start: "",
       end: ""
     });
   });
+
+  for (const button of document.querySelectorAll(
+    "[data-template-preset]"
+  )) {
+    button.addEventListener("click", () => {
+      if (isBusy()) return;
+
+      if (
+        editor.children.length &&
+        !confirm(
+          "Thay các ca đang nhập bằng bộ giờ mẫu? " +
+          "Chỉ lưu khi bấm Lưu công việc."
+        )
+      ) {
+        return;
+      }
+
+      const hours =
+        button.dataset.templatePreset === "four"
+          ? [
+              ["10:00", "14:00"],
+              ["14:00", "18:00"],
+              ["18:00", "22:00"],
+              ["22:00", "02:00"]
+            ]
+          : [
+              ["07:00", "12:00"],
+              ["12:00", "17:00"],
+              ["17:00", "22:30"]
+            ];
+
+      editor.replaceChildren();
+      updateEmpty();
+
+      hours.forEach(([start, end], index) => {
+        addRow(newId(), {
+          name: "Ca " + (index + 1),
+          start,
+          end
+        });
+      });
+
+      el("template-message").textContent =
+        "Đã điền giờ mẫu. Bấm Lưu công việc để lưu các ca.";
+    });
+  }
 
   function refresh() {
     for (const field of fields) {
@@ -113,9 +178,10 @@ export function initJobShifts({
       for (const [id, template] of Object.entries(
         job?.templates || {}
       )) {
-        const nextDay = template.end < template.start
-          ? " (hôm sau)"
-          : "";
+        const nextDay =
+          template.end < template.start
+            ? " (hôm sau)"
+            : "";
 
         select.add(
           new Option(
@@ -146,7 +212,8 @@ export function initJobShifts({
 
     el(field.select).addEventListener("change", () => {
       const job = getData().jobs[el(field.job).value];
-      const template = job?.templates?.[el(field.select).value];
+      const template =
+        job?.templates?.[el(field.select).value];
 
       if (!template) return;
 
@@ -168,6 +235,7 @@ export function initJobShifts({
 
     edit(job) {
       editor.replaceChildren();
+      updateEmpty();
 
       el("job-color").value = jobColor(job);
       el("template-message").textContent = "";

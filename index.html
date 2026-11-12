@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Lương tháng</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=20261112-2">
 </head>
 
 <body>
@@ -624,6 +624,58 @@
         >
       </label>
 
+      <fieldset id="job-template-fields">
+        <label>
+          Màu lịch công việc
+          <select id="job-color">
+            <option value="yellow">Vàng kem</option>
+            <option value="pink">Hồng</option>
+          </select>
+        </label>
+
+        <h3>Các ca làm của công việc</h3>
+
+        <p class="hint">
+          Bấm Thêm ca rồi nhập tên, giờ vào và giờ ra.
+          Ví dụ Ca 1 từ 10:00–14:00.
+          Ca 22:00–02:00 sẽ kết thúc vào hôm sau.
+        </p>
+
+        <div class="template-presets">
+          <button
+            type="button"
+            class="btn subtle"
+            data-template-preset="four"
+          >
+            Điền 4 ca: 10–14 · 14–18 · 18–22 · 22–02
+          </button>
+
+          <button
+            type="button"
+            class="btn subtle"
+            data-template-preset="three"
+          >
+            Điền 3 ca: 07–12 · 12–17 · 17–22:30
+          </button>
+        </div>
+
+        <div id="job-templates"></div>
+
+        <p id="templates-empty" class="hint">
+          Chưa có ca. Chọn bộ giờ mẫu phía trên hoặc bấm + Thêm ca.
+        </p>
+
+        <button
+          id="add-template"
+          class="btn subtle"
+          type="button"
+        >
+          + Thêm ca
+        </button>
+
+        <p id="template-message" role="status"></p>
+      </fieldset>
+
       <label>
         Lương thường mỗi giờ (đ)
         <input
@@ -656,36 +708,6 @@
         Đây là lương mặc định cho ca mới.
       </p>
 
-      <fieldset id="job-template-fields">
-        <label>
-          Màu lịch công việc
-          <select id="job-color">
-            <option value="yellow">Vàng kem</option>
-            <option value="pink">Hồng</option>
-          </select>
-        </label>
-
-        <h3>Các ca làm của công việc</h3>
-
-        <p class="hint">
-          Bấm Thêm ca rồi nhập tên, giờ vào và giờ ra.
-          Ví dụ Ca 1 từ 10:00–14:00.
-          Ca 22:00–02:00 sẽ kết thúc vào hôm sau.
-        </p>
-
-        <div id="job-templates"></div>
-
-        <button
-          id="add-template"
-          class="btn subtle"
-          type="button"
-        >
-          + Thêm ca
-        </button>
-
-        <p id="template-message" role="status"></p>
-      </fieldset>
-
       <button
         class="btn full"
         id="save-job"
@@ -696,6 +718,6 @@
     </form>
   </dialog>
 
-  <script type="module" src="app.js"></script>
+  <script type="module" src="app.js?v=20261112-2"></script>
 </body>
 </html>

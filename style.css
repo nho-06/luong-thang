@@ -299,6 +299,8 @@ select:focus {
   width: 100%;
 }
 
+/* Danh sách công việc */
+
 .job-card {
   display: flex;
   align-items: center;
@@ -320,12 +322,12 @@ select:focus {
   background: var(--green);
 }
 
-.job-card:nth-child(3n + 2) .job-dot {
-  background: #dbad55;
+.job-card[data-color="yellow"] .job-dot {
+  background: #d29820;
 }
 
-.job-card:nth-child(3n) .job-dot {
-  background: #849dbd;
+.job-card[data-color="pink"] .job-dot {
+  background: #d56d99;
 }
 
 .job-info {
@@ -344,6 +346,8 @@ select:focus {
   margin-top: 6px;
   color: var(--muted);
   font-size: 10px;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
 }
 
 .job-money {
@@ -368,6 +372,8 @@ select:focus {
   padding: 4px;
   font-size: 10px;
 }
+
+/* Biểu mẫu */
 
 .pair,
 .triple {
@@ -443,6 +449,8 @@ fieldset {
   font-size: 11px;
 }
 
+/* Lịch sử chấm công */
+
 .table-scroll {
   overflow-x: auto;
 }
@@ -514,6 +522,8 @@ td button {
   color: var(--green);
 }
 
+/* Trạng thái trống */
+
 .empty {
   padding: 15px 0;
   color: var(--muted);
@@ -551,6 +561,8 @@ td button {
   color: #8a968e;
 }
 
+/* Thông báo */
+
 .notice {
   padding: 14px 18px;
   margin-bottom: 20px;
@@ -567,6 +579,8 @@ td button {
   color: var(--green);
 }
 
+/* Hộp thoại */
+
 dialog {
   max-width: 440px;
   width: calc(100% - 32px);
@@ -576,6 +590,7 @@ dialog {
   border: 1px solid var(--line);
   border-radius: 18px;
   color: inherit;
+  background: white;
 }
 
 dialog::backdrop {
@@ -750,7 +765,7 @@ dialog::backdrop {
   color: inherit;
 }
 
-/* Màu lịch học */
+/* Lịch học: xanh dương */
 
 .week-time-block[data-source="study"],
 .week-time-block[data-color="blue"] {
@@ -760,7 +775,7 @@ dialog::backdrop {
   color: #204c8c;
 }
 
-/* Công việc chọn màu vàng kem */
+/* Công việc: vàng kem */
 
 .week-time-block[data-color="yellow"] {
   background: #fff3d9;
@@ -769,7 +784,7 @@ dialog::backdrop {
   color: #80520c;
 }
 
-/* Công việc chọn màu hồng */
+/* Công việc: hồng */
 
 .week-time-block[data-color="pink"] {
   background: #fce7f0;
@@ -837,17 +852,43 @@ dialog::backdrop {
   color: #a13925;
 }
 
-/* Cấu hình ca riêng cho công việc */
+/* Sửa công việc và cấu hình các ca */
+
+#job-dialog {
+  max-width: 650px;
+  max-height: 90vh;
+  max-height: 90dvh;
+}
 
 #job-template-fields {
   margin: 18px 0;
+  padding: 16px;
+  border: 1px solid #dce5df;
+  border-radius: 12px;
+  background: #f8faf7;
 }
 
 #job-template-fields h3 {
   font-size: 14px;
 }
 
+.template-presets {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.template-presets button {
+  text-align: left;
+  white-space: normal;
+  line-height: 1.6;
+}
+
 .template-row {
+  display: grid;
+  grid-template-columns:
+    minmax(90px, 1fr) 1fr 1fr;
+  gap: 10px;
   padding: 12px;
   margin: 12px 0;
   border: 1px solid var(--line);
@@ -857,6 +898,16 @@ dialog::backdrop {
 
 .template-row input {
   margin-bottom: 10px;
+}
+
+.template-row > button {
+  grid-column: 1 / -1;
+  justify-self: end;
+}
+
+#template-message {
+  color: #865422;
+  line-height: 1.7;
 }
 
 /* Máy tính bảng */
@@ -1137,5 +1188,21 @@ dialog::backdrop {
 
   .filter select {
     width: 180px;
+  }
+
+  #job-dialog {
+    padding: 16px;
+  }
+
+  #job-template-fields {
+    padding: 10px;
+  }
+
+  .template-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .template-row > label:first-child {
+    grid-column: 1 / -1;
   }
 }
